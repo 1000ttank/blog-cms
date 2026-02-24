@@ -1,13 +1,12 @@
 import path from 'path'
 import type { NextConfig } from 'next'
 
-const REPO_NAME = 'blog-cms'
+const REPO_NAME = process.env.DOCKER ? '' : 'blog-cms'
 
 const nextConfig: NextConfig = {
   output: 'export',
   trailingSlash: true,
-  basePath: `/${REPO_NAME}`,   // 子路径部署必须设置
-  assetPrefix: `/${REPO_NAME}/`,
+  ...(REPO_NAME && { basePath: `/${REPO_NAME}`, assetPrefix: `/${REPO_NAME}/` }),
   images: {
     unoptimized: true,
     remotePatterns: [

@@ -108,11 +108,10 @@ export class GitHubClient {
 
     // Use getTree on parent dir to find existing SHA — avoids a visible 404 console error
     // that would appear if we used getFile() directly on a non-existent path.
-    let existingSha: string | undefined
     const dir = path.split('/').slice(0, -1).join('/')
     const filename = path.split('/').pop()!
     const siblings = await this.getTree(dir) // returns [] on 404, no console error
-    existingSha = siblings.find((f) => f.name === filename)?.sha
+    const existingSha = siblings.find((f) => f.name === filename)?.sha
 
     const { data } = await this.octokit.rest.repos.createOrUpdateFileContents({
       owner: this.config.owner,

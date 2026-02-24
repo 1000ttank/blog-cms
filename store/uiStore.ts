@@ -8,7 +8,7 @@ interface UIStore extends UIState {
   setLoading(loading: boolean, message?: string): void
 }
 
-export const useUIStore = create<UIStore>((set, get) => ({
+export const useUIStore = create<UIStore>((set) => ({
   sidebarOpen: true,
   theme: 'system',
   loading: false,

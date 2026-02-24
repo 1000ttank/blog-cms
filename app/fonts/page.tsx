@@ -62,7 +62,7 @@ export default function FontsPage() {
     const saved = localStorage.getItem(FONT_NAME_KEY)
     if (saved) setAppliedFont(saved)
     loadFonts()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])  
 
   async function loadFonts() {
     setLoading(true)

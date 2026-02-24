@@ -59,11 +59,11 @@ export const usePostStore = create<PostStore>((set, get) => ({
     try {
       const service = getPostService()
       const post = await service.createPost(input)
-      set((state) => ({
+      set({
         isSaving: false,
         posts: [],
         currentPost: post,
-      }))
+      })
       // Re-fetch list
       await get().fetchPosts()
       return post

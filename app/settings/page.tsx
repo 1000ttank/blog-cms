@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Settings,
   GitBranch,
   Key,
   LogOut,

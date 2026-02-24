@@ -46,7 +46,7 @@ export function AppShell({ children, title, fullWidth }: AppShellProps) {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header title={title} />
-        <main className="flex-1 overflow-auto p-6 w-full">{children}</main>
+        <main className={`flex-1 overflow-auto p-6 w-full ${fullWidth ? 'max-w-none' : ''}`}>{children}</main>
       </div>
     </div>
   )

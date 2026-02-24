@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { PenSquare, Trash2, Send, EyeOff, Search, RefreshCw } from 'lucide-react'
+import { PenSquare, Search, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'

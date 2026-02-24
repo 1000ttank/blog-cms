@@ -27,7 +27,6 @@ async function uploadToGitHub(file: File): Promise<ImageUploadResult> {
   const path = `source/assets/${timestamp}-${safeFilename}`
 
   const buffer = await file.arrayBuffer()
-  const content = Buffer.from(buffer).toString('base64')
 
   // Direct API call with pre-encoded content
   const octokit = (client as unknown as { octokit: { rest: unknown } }).octokit

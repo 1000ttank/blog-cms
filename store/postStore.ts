@@ -43,7 +43,8 @@ export const usePostStore = create<PostStore>((set, get) => ({
   },
 
   async fetchPost(path: string) {
-    set({ isLoading: true, error: null })
+    // Clear currentPost immediately so PostEditor doesn't render with stale data
+    set({ isLoading: true, error: null, currentPost: null })
     try {
       const service = getPostService()
       const post = await service.getPost(path)

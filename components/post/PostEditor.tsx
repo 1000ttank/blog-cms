@@ -64,6 +64,26 @@ export function PostEditor({ mode, post }: PostEditorProps) {
   const [body, setBody] = useState<string>(post?.body ?? DEFAULT_BODY)
   const [editorView, setEditorView] = useState<EditorView>('split')
 
+  // Sync state when the post prop changes (e.g. after draft-status move + navigation).
+  // This is a belt-and-suspenders guard; the `key` prop on PostEditor already handles
+  // remounting when the path changes, but this covers any edge case where it doesn't.
+  useEffect(() => {
+    if (mode === 'edit' && post) {
+      setFrontmatter({
+        title: post.frontmatter.title ?? '',
+        tags: (post.frontmatter.tags ?? []) as string[],
+        categories: (post.frontmatter.categories ?? []) as string[],
+        draft: post.isDraft,
+        description: post.frontmatter.description as string | undefined,
+        cover: post.frontmatter.cover as string | undefined,
+        slug: post.frontmatter.slug as string | undefined,
+      })
+      setBody(post.body ?? DEFAULT_BODY)
+    }
+    // Only re-run when the post's identity (path + sha) changes, not on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [post?.path, post?.sha])
+
   // Auto-save to sessionStorage
   useEffect(() => {
     if (mode === 'create') {

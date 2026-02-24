@@ -38,7 +38,9 @@ function EditPostContent() {
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
       ) : (
-        <PostEditor mode="edit" post={currentPost ?? undefined} />
+        // key=path forces PostEditor to remount (and reinitialize useState)
+        // whenever the target post changes, preventing stale draft-switch state
+        <PostEditor key={currentPost?.path} mode="edit" post={currentPost ?? undefined} />
       )}
     </AppShell>
   )

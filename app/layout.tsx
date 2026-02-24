@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import { Providers } from '@/components/layout/Providers'
 import { GlobalFontProvider } from '@/components/layout/GlobalFontProvider'
 import { UpdateBanner } from '@/components/layout/UpdateBanner'
+import { SpaRedirectHandler } from '@/components/layout/SpaRedirectHandler'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -36,6 +37,7 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <body className={inter.className}>
         <GlobalFontProvider />
+        <SpaRedirectHandler />
         <UpdateBanner />
         <Providers>{children}</Providers>
       </body>

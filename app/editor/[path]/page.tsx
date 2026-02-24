@@ -6,6 +6,12 @@ import { AppShell } from '@/components/layout/AppShell'
 import { PostEditor } from '@/components/post/PostEditor'
 import { usePostStore } from '@/store/postStore'
 
+// Required for `output: 'export'` — actual paths are resolved at runtime via GitHub API.
+// An empty array tells Next.js "no pages to pre-render"; client-side navigation handles routing.
+export function generateStaticParams() {
+  return []
+}
+
 export default function EditPostPage() {
   const params = useParams()
   const { fetchPost, currentPost, isLoading } = usePostStore()

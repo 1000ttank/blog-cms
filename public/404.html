@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>Hexo-NX-CMS</title>
+  <script>
+    // SPA fallback for GitHub Pages static hosting.
+    // When a page is not found (e.g. hard-refresh on /blog-cms/editor/xxx),
+    // GitHub Pages serves this 404.html. We capture the intended path and
+    // redirect to the app root with the path encoded as a query string,
+    // then the app restores the navigation client-side.
+    ;(function () {
+      var segmentCount = 1 // number of path segments to keep (1 = keep /blog-cms)
+      var loc = window.location
+      var dest =
+        loc.protocol +
+        '//' +
+        loc.hostname +
+        (loc.port ? ':' + loc.port : '') +
+        loc.pathname
+          .split('/')
+          .slice(0, 1 + segmentCount)
+          .join('/') +
+        '/?p=' +
+        encodeURIComponent(
+          loc.pathname.split('/').slice(1 + segmentCount).join('/') +
+            (loc.search ? '&q=' + encodeURIComponent(loc.search.slice(1)) : '') +
+            (loc.hash ? '#' + loc.hash.slice(1) : '')
+        )
+      window.location.replace(dest)
+    })()
+  </script>
+</head>
+<body></body>
+</html>

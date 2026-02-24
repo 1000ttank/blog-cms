@@ -130,7 +130,7 @@ export default function PostsPage() {
               <PostCard
                 key={post.path}
                 post={post}
-                onEdit={() => router.push(`${ROUTES.EDITOR}/${encodeURIComponent(post.path)}`)}
+                onEdit={() => router.push(`${ROUTES.EDITOR}?path=${encodeURIComponent(post.path)}`)}
                 onDelete={() => handleDelete(post.path, post.sha, post.title)}
                 onPublish={
                   post.isDraft ? () => handlePublish(post.path, post.sha, post.title) : undefined

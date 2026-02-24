@@ -178,7 +178,7 @@ export default function DashboardPage() {
                 {recentPosts.map((post) => (
                   <li key={post.path} className="flex items-center justify-between gap-3">
                     <Link
-                      href={`${ROUTES.EDITOR}/${encodeURIComponent(post.path)}`}
+                      href={`${ROUTES.EDITOR}?path=${encodeURIComponent(post.path)}`}
                       className="flex-1 min-w-0 text-sm hover:text-primary transition-colors truncate"
                     >
                       {post.title}

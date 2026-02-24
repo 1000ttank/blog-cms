@@ -104,13 +104,13 @@ export function PostEditor({ mode, post }: PostEditorProps) {
         const created = await createPost(input)
         sessionStorage.removeItem('hexo_nx_cms_autosave')
         toast.success('文章已创建！')
-        router.push(`${ROUTES.EDITOR}/${encodeURIComponent(created.path)}`)
+        router.push(`${ROUTES.EDITOR}?path=${encodeURIComponent(created.path)}`)
       } else if (post) {
         const updated = await updatePost(post.path, input, post.sha)
         toast.success('文章已保存！')
         // If draft status toggled, the file path changed — navigate to the new path
         if (updated.path !== post.path) {
-          router.push(`${ROUTES.EDITOR}/${encodeURIComponent(updated.path)}`)
+          router.push(`${ROUTES.EDITOR}?path=${encodeURIComponent(updated.path)}`)
         }
       }
     } catch {

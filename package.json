@@ -1,8 +1,8 @@
 {
-  "name": "hexo-nx-cms",
+  "name": "blogo-cms",
   "version": "0.1.0",
   "private": true,
-  "description": "Next.js CMS for Hexo blog - Jamstack + GitOps + Serverless",
+  "description": "A serverless CMS for Hexo blogs powered by Next.js + GitHub API",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

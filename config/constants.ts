@@ -1,6 +1,6 @@
-export const APP_NAME = 'Hexo-NX-CMS'
+export const APP_NAME = 'Blogo CMS'
 export const APP_VERSION = '0.1.0'
-export const APP_DESCRIPTION = 'Next.js CMS for Hexo Blog'
+export const APP_DESCRIPTION = 'A serverless CMS for Hexo blogs powered by Next.js + GitHub API'
 
 // ─── Version Check ────────────────────────────────────────────────────────────
 

@@ -10,11 +10,11 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: {
-    default: 'Hexo-NX-CMS',
-    template: '%s | Hexo-NX-CMS',
+    default: 'Blogo CMS',
+    template: '%s | Blogo CMS',
   },
-  description: 'Next.js CMS for Hexo blog — Jamstack + GitOps + Serverless',
-  keywords: ['hexo', 'cms', 'blog', 'nextjs', 'github'],
+  description: 'A serverless CMS for Hexo blogs — Jamstack + GitOps + Serverless',
+  keywords: ['hexo', 'cms', 'blog', 'nextjs', 'github', 'blogo'],
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },

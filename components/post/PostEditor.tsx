@@ -43,7 +43,7 @@ const DEFAULT_BODY = `## 简介
 - 图片
 
 \`\`\`typescript
-console.log('Hello, Hexo-NX-CMS!')
+console.log('Hello, Blogo CMS!')
 \`\`\`
 `
 

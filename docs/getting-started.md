@@ -1,6 +1,6 @@
 # 新手入门指南：GitHub 配置全流程
 
-本文档面向第一次使用 Hexo-NX-CMS 的用户，带你从零完成所有 GitHub 配置。
+本文档面向第一次使用 Blogo CMS 的用户，带你从零完成所有 GitHub 配置。
 
 ---
 
@@ -39,7 +39,7 @@ Token 是 CMS 与 GitHub 通信的凭证，用于读写博客文章。
 4. 点击右上角 **Generate new token** → **Generate new token (classic)**
 
 5. 填写表单：
-   - **Note（备注）**：填写 `hexo-nx-cms`（用于区分用途，随意填写）
+   - **Note（备注）**：填写 `blogo-cms`（用于区分用途，随意填写）
    - **Expiration（有效期）**：建议选 `No expiration` 或 `1 year`
    - **Select scopes（权限）**：勾选 `repo`（展开后会自动勾选所有 repo 子项）
 
@@ -139,7 +139,7 @@ sed -i "s|https://github.com/|https://x-access-token:${GH_TOKEN}@github.com/|" _
 打开终端，进入 `blog/` 目录，依次执行以下命令：
 
 ```bash
-cd /path/to/Hexo-NX-CMS/blog
+cd /path/to/Blogo-CMS/blog
 
 # 安装依赖，生成 package-lock.json（GitHub Actions 的 npm ci 命令需要此文件）
 npm install
@@ -196,7 +196,7 @@ Actions 成功运行后，`gh-pages` 分支会被自动创建。
 ## 第七步：启动 CMS 并登录
 
 ```bash
-cd /path/to/Hexo-NX-CMS/blog-cms
+cd /path/to/Blogo-CMS/blog-cms
 
 # 首次使用时安装依赖（已安装可跳过）
 npm install

@@ -32,29 +32,63 @@ function slugify(text: string) {
 }
 
 function parseHeadings(md: string): Heading[] {
-  return md
-    .split('\n')
-    .filter(line => /^#{1,3}\s/.test(line))
-    .map(line => {
-      const match = line.match(/^(#{1,3})\s+(.+)$/)
-      if (!match) return null
-      const level = match[1].length
-      const text = match[2].trim()
-      return { level, text, id: slugify(text) }
-    })
-    .filter(Boolean) as Heading[]
+  const lines = md.split('\n')
+  const result: Heading[] = []
+  let inCode = false
+  for (const line of lines) {
+    if (line.startsWith('```')) { inCode = !inCode; continue }
+    if (inCode) continue
+    const match = line.match(/^(#{1,3})\s+(.+)$/)
+    if (match) {
+      result.push({ level: match[1].length, text: match[2].trim(), id: slugify(match[2].trim()) })
+    }
+  }
+  return result
 }
 
 // ─── Split markdown into tabs ────────────────────────────────────────────────
 
-function splitContent(md: string) {
-  const qaMarker = '\n## 常见问题'
-  const qaIdx = md.indexOf(qaMarker)
-  if (qaIdx === -1) return { main: md, qa: '' }
-  return {
-    main: md.slice(0, qaIdx).trim(),
-    qa: md.slice(qaIdx).trim(),
-  }
+interface SplitContent {
+  main: string
+  theme: string
+  cms: string
+  blogQa: string
+  cmsQa: string
+}
+
+function splitContent(md: string): SplitContent {
+  const THEME_MARKER  = '\n## 附：更换 Hexo 主题'
+  const CMS_MARKER    = '\n## 部署 CMS 到 GitHub Pages'
+  const BLOG_QA_MARKER = '\n## 常见问题'
+  const CMS_QA_MARKER  = '\n## CMS 常见问题'
+
+  const themeIdx  = md.indexOf(THEME_MARKER)
+  const cmsIdx    = md.indexOf(CMS_MARKER)
+  const blogQaIdx = md.indexOf(BLOG_QA_MARKER)
+  const cmsQaIdx  = md.indexOf(CMS_QA_MARKER)
+
+  // Collect actual section start positions (only for found markers)
+  const positions = [
+    themeIdx !== -1  ? themeIdx  : Infinity,
+    cmsIdx !== -1    ? cmsIdx    : Infinity,
+    blogQaIdx !== -1 ? blogQaIdx : Infinity,
+    cmsQaIdx !== -1  ? cmsQaIdx  : Infinity,
+  ]
+  const firstSplit = Math.min(...positions)
+
+  const main   = (firstSplit < Infinity ? md.slice(0, firstSplit) : md).trim()
+  const theme  = themeIdx !== -1
+    ? md.slice(themeIdx, Math.min(...positions.filter(p => p > themeIdx))).trim()
+    : ''
+  const cms    = cmsIdx !== -1
+    ? md.slice(cmsIdx, Math.min(...positions.filter(p => p > cmsIdx))).trim()
+    : ''
+  const blogQa = blogQaIdx !== -1
+    ? md.slice(blogQaIdx, Math.min(...positions.filter(p => p > blogQaIdx))).trim()
+    : ''
+  const cmsQa  = cmsQaIdx !== -1 ? md.slice(cmsQaIdx).trim() : ''
+
+  return { main, theme, cms, blogQa, cmsQa }
 }
 
 // ─── TOC Component ───────────────────────────────────────────────────────────
@@ -133,16 +167,34 @@ interface GuideViewerProps {
   content: string
 }
 
+function MdPanel({ source }: { source: string }) {
+  return (
+    <div data-color-mode="light" className="rounded-lg border bg-card p-6">
+      <MarkdownPreview
+        source={source}
+        style={{ background: 'transparent', fontSize: '14px' }}
+        wrapperElement={{ 'data-color-mode': 'light' } as React.HTMLAttributes<HTMLDivElement>}
+      />
+    </div>
+  )
+}
+
 export function GuideViewer({ content }: GuideViewerProps) {
   const [tab, setTab] = useState('main')
   const [tocOpen, setTocOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isNarrow, setIsNarrow] = useState(false)
 
-  const { main: mainContent, qa: qaContent } = splitContent(content)
-  const mainHeadings = parseHeadings(mainContent)
-  const qaHeadings = parseHeadings(qaContent)
-  const currentHeadings = tab === 'main' ? mainHeadings : qaHeadings
+  const { main, theme, cms, blogQa, cmsQa } = splitContent(content)
+
+  const headingMap: Record<string, Heading[]> = {
+    main:   parseHeadings(main),
+    theme:  parseHeadings(theme),
+    cms:    parseHeadings(cms),
+    blogQa: parseHeadings(blogQa),
+    cmsQa:  parseHeadings(cmsQa),
+  }
+  const currentHeadings = headingMap[tab] ?? []
 
   useInjectHeadingIds(currentHeadings, tab)
 
@@ -156,40 +208,32 @@ export function GuideViewer({ content }: GuideViewerProps) {
     return () => ro.disconnect()
   }, [])
 
+  const tabs = [
+    { value: 'main',   label: '快速部署 Hexo',  content: main },
+    ...(theme  ? [{ value: 'theme',  label: '更换 Hexo 主题', content: theme }]  : []),
+    ...(cms    ? [{ value: 'cms',    label: '部署 CMS',        content: cms }]    : []),
+    ...(blogQa ? [{ value: 'blogQa', label: 'Blog 常见问题',   content: blogQa }] : []),
+    ...(cmsQa  ? [{ value: 'cmsQa',  label: 'CMS 常见问题',    content: cmsQa }]  : []),
+  ]
+
   return (
     <div ref={containerRef} className="relative">
       <Tabs value={tab} onValueChange={v => { setTab(v); setTocOpen(false) }}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="main">快速部署 Hexo</TabsTrigger>
-          {qaContent && <TabsTrigger value="qa">常见问题 Q&amp;A</TabsTrigger>}
+        <TabsList className="mb-4 flex-wrap h-auto gap-y-1">
+          {tabs.map(t => (
+            <TabsTrigger key={t.value} value={t.value}>{t.label}</TabsTrigger>
+          ))}
         </TabsList>
 
-        {/* Wide layout: content + right TOC */}
         <div className="flex gap-6 items-start">
           <div className="min-w-0 flex-1">
-            <TabsContent value="main" className="mt-0">
-              <div data-color-mode="light" className="rounded-lg border bg-card p-6">
-                <MarkdownPreview
-                  source={mainContent}
-                  style={{ background: 'transparent', fontSize: '14px' }}
-                  wrapperElement={{ 'data-color-mode': 'light' } as React.HTMLAttributes<HTMLDivElement>}
-                />
-              </div>
-            </TabsContent>
-            {qaContent && (
-              <TabsContent value="qa" className="mt-0">
-                <div data-color-mode="light" className="rounded-lg border bg-card p-6">
-                  <MarkdownPreview
-                    source={qaContent}
-                    style={{ background: 'transparent', fontSize: '14px' }}
-                    wrapperElement={{ 'data-color-mode': 'light' } as React.HTMLAttributes<HTMLDivElement>}
-                  />
-                </div>
+            {tabs.map(t => (
+              <TabsContent key={t.value} value={t.value} className="mt-0">
+                <MdPanel source={t.content} />
               </TabsContent>
-            )}
+            ))}
           </div>
 
-          {/* Sticky sidebar TOC (wide screens) */}
           {!isNarrow && currentHeadings.length > 0 && (
             <aside className="w-52 shrink-0 sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto rounded-lg border bg-card p-4">
               <TocPanel headings={currentHeadings} />
@@ -198,7 +242,6 @@ export function GuideViewer({ content }: GuideViewerProps) {
         </div>
       </Tabs>
 
-      {/* Narrow: floating TOC button */}
       {isNarrow && currentHeadings.length > 0 && (
         <>
           <button
@@ -210,7 +253,6 @@ export function GuideViewer({ content }: GuideViewerProps) {
             <AlignLeft className="h-5 w-5" />
           </button>
 
-          {/* TOC drawer overlay */}
           {tocOpen && (
             <>
               <div className="fixed inset-0 z-40 bg-black/30" onClick={() => setTocOpen(false)} />

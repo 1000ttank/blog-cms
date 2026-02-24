@@ -320,7 +320,234 @@ git push
 
 修改主题配置后，同样需要 `git commit` + `git push` 触发自动部署。
 
-也可以直接在 CMS 的 **主题管理** 页面在线编辑这两个配置文件，保存后自动提交并触发构建。
+也可以直接在 CMS 的 **配置管理** 页面在线编辑这两个配置文件，保存后自动提交并触发构建。
+
+---
+
+## 部署 CMS 到 GitHub Pages
+
+将 blog-cms（Next.js CMS）静态导出并托管在 GitHub Pages 上，使其可以通过公网访问。
+
+> **说明**：CMS 本身不含敏感数据，所有操作通过浏览器 + GitHub API 完成，静态托管完全安全。
+
+---
+
+### 第一步：在 GitHub 创建仓库
+
+1. 登录 [github.com](https://github.com)，点击右上角 **+** → **New repository**
+2. 填写仓库信息：
+   - **Repository name**：填写仓库名
+     - 若想用根路径访问（`https://<username>.github.io/`），填写 `<username>.github.io`
+     - 若用子路径访问（`https://<username>.github.io/blog-cms/`），填写 `blog-cms` 或任意名称
+   - **Visibility**：**Public**（GitHub Pages 免费版需公开仓库）
+   - **不要**勾选 "Add a README file"、".gitignore"、"license"（本地已有）
+3. 点击 **Create repository**，记下仓库地址，形如：
+   ```
+   https://github.com/<username>/<repo>.git
+   ```
+
+---
+
+### 第二步：将本地代码推送到 GitHub
+
+在终端进入 `blog-cms/` 目录执行：
+
+```bash
+cd blog-cms
+
+# 安装依赖，生成 package-lock.json（Actions 需要此文件）
+npm install
+
+# 初始化 Git 仓库（如果尚未初始化）
+git init
+
+# 将所有文件加入暂存区
+git add .
+
+# 首次提交
+git commit -m "feat: initial commit"
+
+# 关联远程仓库（替换为你的仓库地址）
+git remote add origin https://github.com/<username>/<repo>.git
+
+# 推送到 main 分支
+git branch -M main
+git push -u origin main
+```
+
+> **提示**：如果推送时要求输入密码，请使用 GitHub **Personal Access Token**（PAT）而非账号密码。  
+> 在 GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) 创建一个具有 `repo` 权限的 Token，将其作为密码粘贴。
+
+> **注意**：`package-lock.json` **必须提交**到仓库，否则 GitHub Actions 的 `npm ci` 步骤会报错。请确认 `.gitignore` 中**没有** `package-lock.json` 这一行。
+
+---
+
+### 第三步：修改 next.config.ts
+
+根据仓库名选择配置：
+
+**情况 A：仓库名为 `<username>.github.io`（根路径部署）**
+
+```ts
+import path from 'path'
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  output: 'export',
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
+      { protocol: 'https', hostname: '**.githubusercontent.com' },
+    ],
+  },
+  outputFileTracingRoot: path.join(__dirname),
+}
+
+export default nextConfig
+```
+
+**情况 B：仓库名为其他（如 `blog-cms`）**
+
+```ts
+import path from 'path'
+import type { NextConfig } from 'next'
+
+const REPO_NAME = 'blog-cms'   // 改为你的仓库名
+
+const nextConfig: NextConfig = {
+  output: 'export',
+  trailingSlash: true,
+  basePath: `/${REPO_NAME}`,
+  assetPrefix: `/${REPO_NAME}/`,
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
+      { protocol: 'https', hostname: '**.githubusercontent.com' },
+    ],
+  },
+  outputFileTracingRoot: path.join(__dirname),
+}
+
+export default nextConfig
+```
+
+---
+
+### 第四步：添加 .nojekyll 文件
+
+GitHub Pages 默认启用 Jekyll，会忽略所有以 `_` 开头的目录（包括 `_next/`），导致页面资源加载失败。
+
+```bash
+# 在 blog-cms/ 目录下执行
+touch public/.nojekyll
+```
+
+---
+
+### 第五步：创建 GitHub Actions 工作流
+
+创建文件 `.github/workflows/deploy-cms.yml`：
+
+```yaml
+name: Deploy CMS to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (Static Export)
+        run: npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+```
+
+---
+
+### 第六步：在 GitHub 启用 Pages
+
+> ⚠️ **必须先完成此步骤，再推送代码触发 Actions**。如果 Pages 未启用就触发部署，Actions 会报错：  
+> `创建部署失败（状态：404）…请确保已启用 GitHub Pages`
+
+1. 打开 `https://github.com/<username>/<repo>/settings/pages`
+2. 在 **Source** 下拉菜单中选择 **GitHub Actions**
+3. 点击 **Save** 保存
+
+---
+
+### 第七步：提交并推送所有改动
+
+```bash
+cd blog-cms
+git add .
+git commit -m "feat: add static export config and GitHub Actions for Pages"
+git push
+```
+
+---
+
+### 第八步：验证部署
+
+等待 Actions 运行完成（约 1~3 分钟），访问你的 CMS 地址：
+
+- 根路径部署：`https://<username>.github.io/`
+- 子路径部署：`https://<username>.github.io/blog-cms/`
+
+打开后应看到登录页面，输入 GitHub Token 即可正常使用。
+
+---
+
+### 后续更新 CMS
+
+每次修改代码后，将改动推送到 `main` 分支，GitHub Actions 会自动重新构建并部署，通常 2 分钟内生效：
+
+```bash
+git add .
+git commit -m "your commit message"
+git push
+```
 
 ---
 
@@ -356,7 +583,7 @@ git push
 
 **Q：`git push` 报错 `rejected ... non-fast-forward`**
 
-远程分支存在本地没有的新提交（例如之前 Actions 自动提交了构建产物，或在 GitHub 网页上直接编辑了文件），需要先拉取再推送：
+远程分支存在本地没有的新提交，需要先拉取再推送：
 
 ```bash
 git pull --rebase origin main
@@ -371,4 +598,68 @@ git push
 
 **Q：打开博客页面后没有显示内容**
 
-可能是缺少主题配置，详见上方 **附：更换 Hexo 主题**。
+可能是缺少主题配置，详见上方 **更换 Hexo 主题** 标签页。
+
+---
+
+## CMS 常见问题
+
+### Q：页面空白或 JS/CSS 资源 404
+
+- 检查 `next.config.ts` 中 `basePath` 是否与仓库名完全一致
+- 确认 `public/.nojekyll` 文件已创建并提交
+- 确认 Actions 工作流中 `path: ./out` 正确
+
+---
+
+### Q：Actions 失败，提示 npm ci 错误
+
+确保 `package-lock.json` 已提交到仓库（`.gitignore` 中不能有此文件名）。
+
+---
+
+### Q：Actions deploy 步骤报错"创建部署失败（状态：404）"
+
+错误完整内容类似：
+
+```
+创建部署失败（状态：404）。请确保已启用 GitHub Pages
+HttpError: Not Found
+```
+
+原因是 GitHub Pages 尚未启用。解决方法：
+
+1. 打开 `https://github.com/<username>/<repo>/settings/pages`
+2. **Source** 选择 **GitHub Actions** 并保存
+3. 重新触发 Actions：
+   ```bash
+   git commit --allow-empty -m "chore: trigger pages deployment"
+   git push
+   ```
+
+---
+
+### Q：git push 被拒绝，提示 non-fast-forward
+
+```bash
+git pull --rebase origin main
+git push
+```
+
+---
+
+### Q：登录后刷新页面 Token 丢失
+
+正常行为，Token 存储在浏览器 `localStorage`，清除缓存后需重新登录。
+
+---
+
+### Q：如何使用自定义域名？
+
+在仓库 **Settings → Pages → Custom domain** 填写域名，同时在 `public/` 目录下创建 `CNAME` 文件，内容为你的域名：
+
+```
+cms.yourdomain.com
+```
+
+此时 `next.config.ts` 中的 `basePath` 应置为空（按情况 A 配置）。

@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { FrontmatterForm } from './FrontmatterForm'
 import { usePostStore } from '@/store/postStore'
+import { useResolvedTheme } from '@/hooks/useResolvedTheme'
 import { ROUTES } from '@/config/constants'
 import type { Post, PostInput } from '@/types'
 
@@ -50,6 +51,7 @@ console.log('Hello, Blogo CMS!')
 export function PostEditor({ mode, post }: PostEditorProps) {
   const router = useRouter()
   const { createPost, updatePost, publishDraft, isSaving } = usePostStore()
+  const resolvedTheme = useResolvedTheme()
 
   const [frontmatter, setFrontmatter] = useState<Omit<PostInput, 'body'>>({
     title: post?.frontmatter.title ?? '',
@@ -232,7 +234,7 @@ export function PostEditor({ mode, post }: PostEditorProps) {
         <Separator orientation="vertical" />
 
         {/* Markdown Editor */}
-        <div className="flex-1 overflow-hidden" data-color-mode="light">
+        <div className="flex-1 overflow-hidden" data-color-mode={resolvedTheme}>
           <MDEditor
             value={body}
             onChange={(v) => setBody(v ?? '')}

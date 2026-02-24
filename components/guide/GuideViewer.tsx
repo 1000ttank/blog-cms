@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useEffect, useRef, useState } from 'react'
 import { AlignLeft, X } from 'lucide-react'
+import { useResolvedTheme } from '@/hooks/useResolvedTheme'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
@@ -167,13 +168,13 @@ interface GuideViewerProps {
   content: string
 }
 
-function MdPanel({ source }: { source: string }) {
+function MdPanel({ source, colorMode }: { source: string; colorMode: 'light' | 'dark' }) {
   return (
-    <div data-color-mode="light" className="rounded-lg border bg-card p-6">
+    <div data-color-mode={colorMode} className="rounded-lg border bg-card p-6">
       <MarkdownPreview
         source={source}
         style={{ background: 'transparent', fontSize: '14px' }}
-        wrapperElement={{ 'data-color-mode': 'light' } as React.HTMLAttributes<HTMLDivElement>}
+        wrapperElement={{ 'data-color-mode': colorMode } as React.HTMLAttributes<HTMLDivElement>}
       />
     </div>
   )
@@ -184,6 +185,7 @@ export function GuideViewer({ content }: GuideViewerProps) {
   const [tocOpen, setTocOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isNarrow, setIsNarrow] = useState(false)
+  const resolvedTheme = useResolvedTheme()
 
   const { main, theme, cms, blogQa, cmsQa } = splitContent(content)
 
@@ -229,7 +231,7 @@ export function GuideViewer({ content }: GuideViewerProps) {
           <div className="min-w-0 flex-1">
             {tabs.map(t => (
               <TabsContent key={t.value} value={t.value} className="mt-0">
-                <MdPanel source={t.content} />
+                <MdPanel source={t.content} colorMode={resolvedTheme} />
               </TabsContent>
             ))}
           </div>

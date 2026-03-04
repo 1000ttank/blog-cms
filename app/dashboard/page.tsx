@@ -97,8 +97,17 @@ export default function DashboardPage() {
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{isLoading ? '—' : published.length}</div>
-                <p className="text-xs text-muted-foreground mt-1">source/_posts</p>
+                {isLoading ? (
+                  <div className="space-y-2">
+                    <div className="h-8 w-16 animate-pulse rounded bg-muted" />
+                    <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">{published.length}</div>
+                    <p className="text-xs text-muted-foreground mt-1">source/_posts</p>
+                  </>
+                )}
               </CardContent>
             </Card>
           </Link>
@@ -110,8 +119,17 @@ export default function DashboardPage() {
                 <PenSquare className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{isLoading ? '—' : drafts.length}</div>
-                <p className="text-xs text-muted-foreground mt-1">source/_drafts</p>
+                {isLoading ? (
+                  <div className="space-y-2">
+                    <div className="h-8 w-16 animate-pulse rounded bg-muted" />
+                    <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">{drafts.length}</div>
+                    <p className="text-xs text-muted-foreground mt-1">source/_drafts</p>
+                  </>
+                )}
               </CardContent>
             </Card>
           </Link>

@@ -68,3 +68,196 @@
   border-bottom: 1px solid hsl(var(--border)) !important;
   background: hsl(var(--card)) !important;
 }
+
+/* ─── Markdown 渲染优化 ─────────────────────────────────────────────────── */
+
+/* 优化的字体栈 - 中文优化 */
+.wmde-markdown {
+  font-family:
+    -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto,
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑",
+    "Noto Sans CJK SC", "Source Han Sans SC",
+    sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji" !important;
+}
+
+/* 代码字体栈 - 支持连字 */
+.wmde-markdown code,
+.wmde-markdown pre {
+  font-family:
+    "JetBrains Mono", "Fira Code", "Cascadia Code",
+    "SF Mono", Monaco, Menlo,
+    "Consolas", "Liberation Mono",
+    "PingFang SC", "Microsoft YaHei",
+    monospace !important;
+}
+
+/* 正文字号与行高优化 */
+.wmde-markdown p {
+  font-size: 16px !important;
+  line-height: 1.7 !important;
+  color: hsl(var(--foreground)) !important;
+  margin-bottom: 1em !important;
+}
+
+/* 标题优化 */
+.wmde-markdown h1,
+.wmde-markdown h2,
+.wmde-markdown h3,
+.wmde-markdown h4,
+.wmde-markdown h5,
+.wmde-markdown h6 {
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  margin-top: 1.5em !important;
+  margin-bottom: 0.75em !important;
+}
+
+.wmde-markdown h1 { font-size: 28px !important; }
+.wmde-markdown h2 { font-size: 24px !important; }
+.wmde-markdown h3 { font-size: 20px !important; }
+.wmde-markdown h4 { font-size: 18px !important; }
+.wmde-markdown h5 { font-size: 16px !important; }
+.wmde-markdown h6 { font-size: 14px !important; }
+
+/* 代码块优化 */
+.wmde-markdown pre {
+  background: hsl(var(--muted)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 6px !important;
+  padding: 16px !important;
+  margin: 1.5em 0 !important;
+  overflow-x: auto !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.wmde-markdown pre code {
+  background: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+  font-size: 14px !important;
+}
+
+/* 行内代码优化 */
+.wmde-markdown code:not(pre code) {
+  background: hsl(var(--muted)) !important;
+  color: hsl(var(--primary)) !important;
+  padding: 0.2em 0.4em !important;
+  border-radius: 3px !important;
+  font-size: 0.92em !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+/* 代码块滚动条美化 */
+.wmde-markdown pre::-webkit-scrollbar {
+  height: 8px !important;
+}
+
+.wmde-markdown pre::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3) !important;
+  border-radius: 4px !important;
+}
+
+.wmde-markdown pre::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5) !important;
+}
+
+/* 表格优化 */
+.wmde-markdown table {
+  display: block !important;
+  overflow-x: auto !important;
+  max-width: 100% !important;
+  border-collapse: collapse !important;
+  margin: 1.5em 0 !important;
+}
+
+.wmde-markdown table th,
+.wmde-markdown table td {
+  border: 1px solid hsl(var(--border)) !important;
+  padding: 8px 12px !important;
+  text-align: left !important;
+}
+
+.wmde-markdown table th {
+  background: hsl(var(--muted)) !important;
+  font-weight: 600 !important;
+}
+
+/* 表格斑马纹 */
+.wmde-markdown table tbody tr:nth-child(even) {
+  background: hsl(var(--muted) / 0.3) !important;
+}
+
+/* 表格悬停效果 */
+.wmde-markdown table tbody tr:hover {
+  background: hsl(var(--accent)) !important;
+}
+
+/* 引用块优化 */
+.wmde-markdown blockquote {
+  border-left: 4px solid hsl(var(--primary)) !important;
+  padding-left: 16px !important;
+  margin: 1.5em 0 !important;
+  color: hsl(var(--muted-foreground)) !important;
+  font-style: italic !important;
+}
+
+/* 列表优化 */
+.wmde-markdown ul,
+.wmde-markdown ol {
+  padding-left: 2em !important;
+  margin: 1em 0 !important;
+}
+
+.wmde-markdown li {
+  margin: 0.5em 0 !important;
+  line-height: 1.7 !important;
+}
+
+/* 链接优化 */
+.wmde-markdown a {
+  color: hsl(var(--primary)) !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid hsl(var(--primary) / 0.3) !important;
+  transition: border-color 0.2s ease !important;
+}
+
+.wmde-markdown a:hover {
+  border-bottom-color: hsl(var(--primary)) !important;
+}
+
+/* 分隔线优化 */
+.wmde-markdown hr {
+  border: none !important;
+  border-top: 2px solid hsl(var(--border)) !important;
+  margin: 2em 0 !important;
+}
+
+/* 图片优化 */
+.wmde-markdown img {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 6px !important;
+  margin: 1.5em 0 !important;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .wmde-markdown p {
+    font-size: 15px !important;
+    line-height: 1.65 !important;
+  }
+
+  .wmde-markdown pre code {
+    font-size: 13px !important;
+  }
+
+  .wmde-markdown h1 { font-size: 24px !important; }
+  .wmde-markdown h2 { font-size: 20px !important; }
+  .wmde-markdown h3 { font-size: 18px !important; }
+  .wmde-markdown h4 { font-size: 16px !important; }
+  .wmde-markdown h5 { font-size: 15px !important; }
+  .wmde-markdown h6 { font-size: 14px !important; }
+}

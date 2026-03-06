@@ -266,8 +266,18 @@ export default function SettingsPage() {
   }
 
   return (
-    <AppShell title="设置">
-      <div className="max-w-2xl space-y-5">
+    <AppShell title="设置" fullWidth>
+      <Tabs defaultValue="general" className="space-y-5">
+        <TabsList>
+          <TabsTrigger value="general">常规设置</TabsTrigger>
+          <TabsTrigger value="image-hosting" className="gap-1.5">
+            <ImageIcon className="h-3.5 w-3.5" />
+            图床配置
+          </TabsTrigger>
+        </TabsList>
+
+        {/* General Settings Tab */}
+        <TabsContent value="general" className="space-y-5">
         {/* Account */}
         <Card>
           <CardHeader>
@@ -589,20 +599,6 @@ document.addEventListener('DOMContentLoaded', function () {
           </CardContent>
         </Card>
 
-        {/* Image Hosting */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ImageIcon className="h-4 w-4" />
-              图床配置
-            </CardTitle>
-            <CardDescription>配置图片上传和 CDN 加速服务</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ImageHostingSettings />
-          </CardContent>
-        </Card>
-
         {/* Danger Zone */}
         <Card className="border-destructive/30">
           <CardHeader>
@@ -620,7 +616,13 @@ document.addEventListener('DOMContentLoaded', function () {
             </Button>
           </CardContent>
         </Card>
-      </div>
+        </TabsContent>
+
+        {/* Image Hosting Tab */}
+        <TabsContent value="image-hosting" className="space-y-5">
+          <ImageHostingSettings />
+        </TabsContent>
+      </Tabs>
     </AppShell>
   )
 }

@@ -84,26 +84,6 @@ export function MonacoEditor({
     }
   }, [config, isUploading, uploadImage, onChange])
 
-  // 处理粘贴事件
-  const handlePaste = useCallback(async () => {
-    // 尝试从剪贴板获取图片
-    try {
-      const items = await navigator.clipboard.read()
-      for (const item of items) {
-        for (const type of item.types) {
-          if (type.startsWith('image/')) {
-            const blob = await item.getType(type)
-            const file = new File([blob], `pasted-image-${Date.now()}.png`, { type })
-            await handleImageUpload(file)
-            return
-          }
-        }
-      }
-    } catch {
-      // 剪贴板 API 可能不可用，忽略
-    }
-  }, [handleImageUpload])
-
   const insertWrapper = (before: string, after: string) => {
     const editor = editorRef.current
     if (!editor) return
@@ -178,11 +158,6 @@ export function MonacoEditor({
       insertWrapper('[', '](url)')
     })
 
-    // 监听粘贴事件
-    editor.onDidPaste(() => {
-      handlePaste()
-    })
-
     // 调用外部 onMount 回调
     if (onMount) {
       onMount(editor, monaco)
@@ -193,7 +168,7 @@ export function MonacoEditor({
     onChange(value ?? '')
   }
 
-  // 设置拖拽区域
+  // 设置拖拽和粘贴事件
   useEffect(() => {
     const editor = editorRef.current
     if (!editor) return
@@ -220,12 +195,33 @@ export function MonacoEditor({
       e.stopPropagation()
     }
 
+    const handlePasteEvent = async (e: Event) => {
+      const clipboardEvent = e as ClipboardEvent
+      const items = clipboardEvent.clipboardData?.items
+      if (!items) return
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        if (item.type.startsWith('image/')) {
+          e.preventDefault()
+          e.stopPropagation()
+          const file = item.getAsFile()
+          if (file) {
+            await handleImageUpload(file)
+            return
+          }
+        }
+      }
+    }
+
     domNode.addEventListener('drop', handleDrop)
     domNode.addEventListener('dragover', handleDragOver)
+    domNode.addEventListener('paste', handlePasteEvent)
 
     return () => {
       domNode.removeEventListener('drop', handleDrop)
       domNode.removeEventListener('dragover', handleDragOver)
+      domNode.removeEventListener('paste', handlePasteEvent)
     }
   }, [handleImageUpload])
 

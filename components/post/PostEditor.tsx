@@ -17,11 +17,20 @@ import rehypeKatex from 'rehype-katex'
 import remarkMath from 'remark-math'
 import 'katex/dist/katex.min.css'
 
-const MDEditor = dynamic(() => import('@uiw/react-md-editor'), {
+const MonacoEditor = dynamic(() => import('@/components/editor/MonacoEditor').then(mod => ({ default: mod.MonacoEditor })), {
   ssr: false,
   loading: () => (
     <div className="flex h-96 items-center justify-center rounded-lg border bg-muted text-muted-foreground text-sm">
       加载编辑器中...
+    </div>
+  ),
+})
+
+const MarkdownPreview = dynamic(() => import('@uiw/react-markdown-preview'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-96 items-center justify-center rounded-lg border bg-muted text-muted-foreground text-sm">
+      加载预览中...
     </div>
   ),
 })
@@ -157,9 +166,6 @@ export function PostEditor({ mode, post }: PostEditorProps) {
     }
   }
 
-  const editorMode =
-    editorView === 'edit' ? 'edit' : editorView === 'preview' ? 'preview' : undefined
-
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col gap-4">
       {/* Toolbar */}
@@ -236,20 +242,35 @@ export function PostEditor({ mode, post }: PostEditorProps) {
 
         <Separator orientation="vertical" />
 
-        {/* Markdown Editor */}
-        <div className="flex-1 overflow-hidden" data-color-mode={resolvedTheme}>
-          <MDEditor
-            value={body}
-            onChange={(v) => setBody(v ?? '')}
-            preview={editorMode}
-            height="100%"
-            visibleDragbar={false}
-            style={{ height: '100%' }}
-            previewOptions={{
-              rehypePlugins: [[rehypeKatex, { strict: false }]],
-              remarkPlugins: [remarkMath],
-            }}
-          />
+        {/* Editor and Preview */}
+        <div className="flex-1 flex gap-4 overflow-hidden">
+          {/* Monaco Editor */}
+          {(editorView === 'edit' || editorView === 'split') && (
+            <div className={`${editorView === 'split' ? 'flex-1' : 'w-full'} overflow-hidden rounded-lg border`}>
+              <MonacoEditor
+                value={body}
+                onChange={setBody}
+                theme={resolvedTheme}
+                height="100%"
+              />
+            </div>
+          )}
+
+          {/* Preview */}
+          {(editorView === 'preview' || editorView === 'split') && (
+            <div
+              className={`${editorView === 'split' ? 'flex-1' : 'w-full'} overflow-y-auto rounded-lg border bg-card p-6`}
+              data-color-mode={resolvedTheme}
+            >
+              <MarkdownPreview
+                source={body}
+                style={{ background: 'transparent' }}
+                wrapperElement={{ 'data-color-mode': resolvedTheme } as React.HTMLAttributes<HTMLDivElement>}
+                rehypePlugins={[[rehypeKatex, { strict: false }]]}
+                remarkPlugins={[remarkMath]}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -29,6 +29,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useAuthStore } from '@/store/authStore'
 import { getGitHubClient } from '@/services/githubClient'
 import { ROUTES } from '@/config/constants'
+import { ImageHostingSettings } from '@/components/settings/ImageHostingSettings'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -585,6 +586,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
               </>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Image Hosting */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4" />
+              图床配置
+            </CardTitle>
+            <CardDescription>配置图片上传和 CDN 加速服务</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ImageHostingSettings />
           </CardContent>
         </Card>
 

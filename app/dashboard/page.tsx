@@ -44,11 +44,14 @@ function useBlogUrl() {
 }
 
 export default function DashboardPage() {
-  const { posts, fetchPosts, isLoading } = usePostStore()
+  const { posts, fetchPosts, isLoading, hasInitiallyLoaded } = usePostStore()
   const { user } = useAuthStore()
   const { blogUrl, urlLoaded } = useBlogUrl()
 
-  useEffect(() => { fetchPosts('all') }, [fetchPosts])
+  useEffect(() => {
+    // 总是刷新数据，确保获取最新信息
+    fetchPosts('all')
+  }, [fetchPosts])
 
   const published = posts.filter((p) => !p.isDraft)
   const drafts = posts.filter((p) => p.isDraft)

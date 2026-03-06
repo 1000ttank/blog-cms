@@ -29,7 +29,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { useAuthStore } from '@/store/authStore'
 import { getGitHubClient } from '@/services/githubClient'
 import { ROUTES } from '@/config/constants'
-import { ImageHostingSettings } from '@/components/settings/ImageHostingSettings'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -266,18 +265,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <AppShell title="设置" fullWidth>
-      <Tabs defaultValue="general" className="space-y-5">
-        <TabsList>
-          <TabsTrigger value="general">常规设置</TabsTrigger>
-          <TabsTrigger value="image-hosting" className="gap-1.5">
-            <ImageIcon className="h-3.5 w-3.5" />
-            图床配置
-          </TabsTrigger>
-        </TabsList>
-
-        {/* General Settings Tab */}
-        <TabsContent value="general" className="space-y-5">
+    <AppShell title="设置">
+      <div className="max-w-2xl space-y-5">
         {/* Account */}
         <Card>
           <CardHeader>
@@ -616,13 +605,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </Button>
           </CardContent>
         </Card>
-        </TabsContent>
-
-        {/* Image Hosting Tab */}
-        <TabsContent value="image-hosting" className="space-y-5">
-          <ImageHostingSettings />
-        </TabsContent>
-      </Tabs>
+      </div>
     </AppShell>
   )
 }

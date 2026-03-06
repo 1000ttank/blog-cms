@@ -49,6 +49,7 @@ export const ROUTES = {
   FONTS: '/fonts',
   BUILDS: '/builds',
   SETTINGS: '/settings',
+  IMAGE_HOSTING: '/image-hosting',
   GUIDE: '/guide',
 } as const
 

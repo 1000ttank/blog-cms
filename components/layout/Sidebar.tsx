@@ -13,6 +13,7 @@ import {
   BookOpen,
   Hammer,
   Type,
+  ImageIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -51,6 +52,11 @@ const navItems = [
     label: '构建历史',
     href: ROUTES.BUILDS,
     icon: Hammer,
+  },
+  {
+    label: '图床配置',
+    href: ROUTES.IMAGE_HOSTING,
+    icon: ImageIcon,
   },
   {
     label: '设置',

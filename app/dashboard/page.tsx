@@ -44,7 +44,7 @@ function useBlogUrl() {
 }
 
 export default function DashboardPage() {
-  const { posts, fetchPosts, isLoading, hasInitiallyLoaded } = usePostStore()
+  const { posts, fetchPosts, isLoading } = usePostStore()
   const { user } = useAuthStore()
   const { blogUrl, urlLoaded } = useBlogUrl()
 

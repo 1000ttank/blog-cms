@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 import Editor, { OnMount, Monaco } from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
 import { toast } from 'sonner'
@@ -28,6 +28,112 @@ export function MonacoEditor({
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const monacoRef = useRef<Monaco | null>(null)
   const { config, uploadImage, isUploading } = useImageStore()
+
+  // 处理图片上传
+  const handleImageUpload = useCallback(async (file: File) => {
+    if (!config) {
+      toast.error('请先在设置中配置图床')
+      return
+    }
+
+    if (isUploading) {
+      toast.warning('正在上传中，请稍候...')
+      return
+    }
+
+    const editor = editorRef.current
+    if (!editor) return
+
+    // 插入占位符
+    const placeholder = `![上传中...](uploading-${Date.now()})`
+    const selection = editor.getSelection()
+    if (selection) {
+      editor.executeEdits('', [
+        {
+          range: selection,
+          text: placeholder,
+        },
+      ])
+    }
+
+    try {
+      const result = await uploadImage(file)
+
+      // 替换占位符为真实 URL
+      const model = editor.getModel()
+      if (model) {
+        const content = model.getValue()
+        const newContent = content.replace(placeholder, `![${file.name}](${result.url})`)
+        model.setValue(newContent)
+        onChange(newContent)
+      }
+
+      toast.success('图片上传成功！')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误'
+      toast.error(`图片上传失败: ${errorMessage}`)
+
+      // 删除占位符
+      const model = editor.getModel()
+      if (model) {
+        const content = model.getValue()
+        const newContent = content.replace(placeholder, '')
+        model.setValue(newContent)
+        onChange(newContent)
+      }
+    }
+  }, [config, isUploading, uploadImage, onChange])
+
+  // 处理粘贴事件
+  const handlePaste = useCallback(async () => {
+    // 尝试从剪贴板获取图片
+    try {
+      const items = await navigator.clipboard.read()
+      for (const item of items) {
+        for (const type of item.types) {
+          if (type.startsWith('image/')) {
+            const blob = await item.getType(type)
+            const file = new File([blob], `pasted-image-${Date.now()}.png`, { type })
+            await handleImageUpload(file)
+            return
+          }
+        }
+      }
+    } catch {
+      // 剪贴板 API 可能不可用，忽略
+    }
+  }, [handleImageUpload])
+
+  const insertWrapper = (before: string, after: string) => {
+    const editor = editorRef.current
+    if (!editor) return
+
+    const selection = editor.getSelection()
+    if (!selection) return
+
+    const model = editor.getModel()
+    if (!model) return
+
+    const selectedText = model.getValueInRange(selection)
+
+    editor.executeEdits('', [
+      {
+        range: selection,
+        text: `${before}${selectedText}${after}`,
+      },
+    ])
+
+    // 如果没有选中文本，将光标移到中间
+    if (!selectedText) {
+      const newPosition = {
+        lineNumber: selection.startLineNumber,
+        column: selection.startColumn + before.length,
+      }
+      editor.setPosition(newPosition)
+    }
+
+    editor.focus()
+  }
 
   const handleEditorDidMount: OnMount = (editor, monaco) => {
     editorRef.current = editor
@@ -73,119 +179,14 @@ export function MonacoEditor({
     })
 
     // 监听粘贴事件
-    editor.onDidPaste((e) => {
-      handlePaste(e)
+    editor.onDidPaste(() => {
+      handlePaste()
     })
 
     // 调用外部 onMount 回调
     if (onMount) {
       onMount(editor, monaco)
     }
-  }
-
-  // 处理粘贴事件
-  const handlePaste = async (e: any) => {
-    // 尝试从剪贴板获取图片
-    try {
-      const items = await navigator.clipboard.read()
-      for (const item of items) {
-        for (const type of item.types) {
-          if (type.startsWith('image/')) {
-            const blob = await item.getType(type)
-            const file = new File([blob], `pasted-image-${Date.now()}.png`, { type })
-            await handleImageUpload(file)
-            return
-          }
-        }
-      }
-    } catch (error) {
-      // 剪贴板 API 可能不可用，忽略
-    }
-  }
-
-  // 处理图片上传
-  const handleImageUpload = async (file: File) => {
-    if (!config) {
-      toast.error('请先在设置中配置图床')
-      return
-    }
-
-    if (isUploading) {
-      toast.warning('正在上传中，请稍候...')
-      return
-    }
-
-    const editor = editorRef.current
-    if (!editor) return
-
-    // 插入占位符
-    const placeholder = `![上传中...](uploading-${Date.now()})`
-    const selection = editor.getSelection()
-    if (selection) {
-      editor.executeEdits('', [
-        {
-          range: selection,
-          text: placeholder,
-        },
-      ])
-    }
-
-    try {
-      const result = await uploadImage(file)
-
-      // 替换占位符为真实 URL
-      const model = editor.getModel()
-      if (model) {
-        const content = model.getValue()
-        const newContent = content.replace(placeholder, `![${file.name}](${result.url})`)
-        model.setValue(newContent)
-        onChange(newContent)
-      }
-
-      toast.success('图片上传成功！')
-    } catch (error: any) {
-      toast.error(`图片上传失败: ${error.message}`)
-
-      // 删除占位符
-      const model = editor.getModel()
-      if (model) {
-        const content = model.getValue()
-        const newContent = content.replace(placeholder, '')
-        model.setValue(newContent)
-        onChange(newContent)
-      }
-    }
-  }
-
-  const insertWrapper = (before: string, after: string) => {
-    const editor = editorRef.current
-    if (!editor) return
-
-    const selection = editor.getSelection()
-    if (!selection) return
-
-    const model = editor.getModel()
-    if (!model) return
-
-    const selectedText = model.getValueInRange(selection)
-
-    editor.executeEdits('', [
-      {
-        range: selection,
-        text: `${before}${selectedText}${after}`,
-      },
-    ])
-
-    // 如果没有选中文本，将光标移到中间
-    if (!selectedText) {
-      const newPosition = {
-        lineNumber: selection.startLineNumber,
-        column: selection.startColumn + before.length,
-      }
-      editor.setPosition(newPosition)
-    }
-
-    editor.focus()
   }
 
   const handleChange = (value: string | undefined) => {
@@ -226,7 +227,7 @@ export function MonacoEditor({
       domNode.removeEventListener('drop', handleDrop)
       domNode.removeEventListener('dragover', handleDragOver)
     }
-  }, [config, isUploading])
+  }, [handleImageUpload])
 
   return (
     <Editor

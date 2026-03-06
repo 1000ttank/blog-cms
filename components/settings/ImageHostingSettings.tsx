@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,12 +36,7 @@ export function ImageHostingSettings() {
   const [imagePath, setImagePath] = useState('images')
   const [useYearMonthFolder, setUseYearMonthFolder] = useState(true)
 
-  useEffect(() => {
-    loadSavedConfig()
-    checkImageRepo()
-  }, [])
-
-  function loadSavedConfig() {
+  const loadSavedConfig = useCallback(() => {
     if (imageConfig) {
       setRepoName(imageConfig.repoName || 'blog-images')
       setCdnRoute(imageConfig.cdnRoute || 'default')
@@ -50,9 +45,9 @@ export function ImageHostingSettings() {
       setImagePath(imageConfig.imagePath || 'images')
       setUseYearMonthFolder(imageConfig.useYearMonthFolder ?? true)
     }
-  }
+  }, [imageConfig])
 
-  async function checkImageRepo() {
+  const checkImageRepo = useCallback(async () => {
     if (!authConfig || !token) return
 
     setRepoStatus('checking')
@@ -62,7 +57,12 @@ export function ImageHostingSettings() {
     } catch {
       setRepoStatus('not-exists')
     }
-  }
+  }, [authConfig, token, repoName])
+
+  useEffect(() => {
+    loadSavedConfig()
+    checkImageRepo()
+  }, [loadSavedConfig, checkImageRepo])
 
   async function handleCreateRepo() {
     if (!authConfig || !token) return
@@ -72,8 +72,9 @@ export function ImageHostingSettings() {
       await setupImageRepository(token, authConfig.owner, repoName)
       toast.success(`图床仓库 ${repoName} 创建成功！`)
       setRepoStatus('exists')
-    } catch (error: any) {
-      toast.error(`创建失败: ${error.message}`)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误'
+      toast.error(`创建失败: ${errorMessage}`)
     } finally {
       setIsCreating(false)
     }

@@ -7,6 +7,9 @@ import { useResolvedTheme } from '@/hooks/useResolvedTheme'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
+import rehypeKatex from 'rehype-katex'
+import remarkMath from 'remark-math'
+import 'katex/dist/katex.min.css'
 
 const MarkdownPreview = dynamic(() => import('@uiw/react-markdown-preview'), {
   ssr: false,
@@ -175,6 +178,8 @@ function MdPanel({ source, colorMode }: { source: string; colorMode: 'light' | '
         source={source}
         style={{ background: 'transparent', fontSize: '14px' }}
         wrapperElement={{ 'data-color-mode': colorMode } as React.HTMLAttributes<HTMLDivElement>}
+        rehypePlugins={[[rehypeKatex, { strict: false }]]}
+        remarkPlugins={[remarkMath]}
       />
     </div>
   )

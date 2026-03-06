@@ -261,3 +261,41 @@
   .wmde-markdown h5 { font-size: 15px !important; }
   .wmde-markdown h6 { font-size: 14px !important; }
 }
+
+/* ─── KaTeX 数学公式优化 ─────────────────────────────────────────────────── */
+
+/* 行内公式 */
+.wmde-markdown .katex {
+  font-size: 1.05em !important;
+}
+
+/* 块级公式 */
+.wmde-markdown .katex-display {
+  margin: 1.5em 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 0.5em 0 !important;
+}
+
+/* 块级公式滚动条 */
+.wmde-markdown .katex-display::-webkit-scrollbar {
+  height: 6px !important;
+}
+
+.wmde-markdown .katex-display::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3) !important;
+  border-radius: 3px !important;
+}
+
+.wmde-markdown .katex-display::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5) !important;
+}
+
+/* 公式错误提示 */
+.wmde-markdown .katex-error {
+  color: hsl(var(--destructive)) !important;
+  background: hsl(var(--destructive) / 0.1) !important;
+  padding: 0.2em 0.4em !important;
+  border-radius: 3px !important;
+}
+

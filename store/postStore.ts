@@ -9,6 +9,7 @@ interface PostStore {
   isSaving: boolean
   error: string | null
   filter: PostStatus
+  hasInitiallyLoaded: boolean
 
   fetchPosts(status?: PostStatus): Promise<void>
   fetchPost(path: string): Promise<void>
@@ -25,10 +26,11 @@ interface PostStore {
 export const usePostStore = create<PostStore>((set, get) => ({
   posts: [],
   currentPost: null,
-  isLoading: false,
+  isLoading: true,
   isSaving: false,
   error: null,
   filter: 'all',
+  hasInitiallyLoaded: false,
 
   async fetchPosts(status?: PostStatus) {
     const targetStatus = status ?? get().filter
@@ -36,9 +38,9 @@ export const usePostStore = create<PostStore>((set, get) => ({
     try {
       const service = getPostService()
       const posts = await service.getPosts(targetStatus)
-      set({ posts, isLoading: false })
+      set({ posts, isLoading: false, hasInitiallyLoaded: true })
     } catch (error) {
-      set({ isLoading: false, error: (error as Error).message })
+      set({ isLoading: false, error: (error as Error).message, hasInitiallyLoaded: true })
     }
   },
 

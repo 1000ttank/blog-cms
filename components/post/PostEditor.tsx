@@ -13,6 +13,9 @@ import { usePostStore } from '@/store/postStore'
 import { useResolvedTheme } from '@/hooks/useResolvedTheme'
 import { ROUTES } from '@/config/constants'
 import type { Post, PostInput } from '@/types'
+import rehypeKatex from 'rehype-katex'
+import remarkMath from 'remark-math'
+import 'katex/dist/katex.min.css'
 
 const MDEditor = dynamic(() => import('@uiw/react-md-editor'), {
   ssr: false,
@@ -242,6 +245,10 @@ export function PostEditor({ mode, post }: PostEditorProps) {
             height="100%"
             visibleDragbar={false}
             style={{ height: '100%' }}
+            previewOptions={{
+              rehypePlugins: [[rehypeKatex, { strict: false }]],
+              remarkPlugins: [remarkMath],
+            }}
           />
         </div>
       </div>

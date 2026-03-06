@@ -44,8 +44,9 @@ export class GitHubImageHosting {
         content: base64,
         branch: this.config.branch,
       })
-    } catch (error: any) {
-      throw new Error(`上传失败: ${error.message}`)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '上传失败'
+      throw new Error(`上传失败: ${errorMessage}`)
     }
 
     onProgress?.(100)

@@ -4,7 +4,6 @@
 
 import { create } from 'zustand'
 import type { ImageHostingConfig, UploadResult } from '@/types/imageHosting'
-import { DEFAULT_IMAGE_HOSTING_CONFIG } from '@/types/imageHosting'
 import { GitHubImageHosting } from '@/services/imageHosting/githubImageHosting'
 import { generateImageUrl } from '@/services/imageHosting/urlGenerator'
 import { useAuthStore } from './authStore'

@@ -32,8 +32,9 @@ export async function setupImageRepository(
         repoUrl: existingRepo.html_url,
         message: '仓库已存在',
       }
-    } catch (error: any) {
-      if (error.status !== 404) {
+    } catch (error) {
+      // 检查是否是 404 错误
+      if (error && typeof error === 'object' && 'status' in error && error.status !== 404) {
         throw error
       }
       // 仓库不存在，继续创建
@@ -126,8 +127,9 @@ images/
       repoUrl: repo.html_url,
       message: '仓库创建成功',
     }
-  } catch (error: any) {
-    throw new Error(`创建图床仓库失败: ${error.message}`)
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '未知错误'
+    throw new Error(`创建图床仓库失败: ${errorMessage}`)
   }
 }
 

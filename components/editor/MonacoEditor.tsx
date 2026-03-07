@@ -160,116 +160,96 @@ export function MonacoEditor({
       insertWrapper('[', '](url)')
     })
 
-    // 调用外部 onMount 回调
-    if (onMount) {
-      onMount(editor, monaco)
-    }
-  }, [onMount])
-
-  const handleChange = (value: string | undefined) => {
-    onChange(value ?? '')
-  }
-
-  // 设置拖拽和粘贴事件
-  useEffect(() => {
-    console.log('[MonacoEditor] Setting up event listeners')
-    const editor = editorRef.current
-    if (!editor) {
-      console.log('[MonacoEditor] No editor ref')
-      return
-    }
-
+    // 在编辑器挂载后立即添加粘贴和拖拽事件监听
     const domNode = editor.getDomNode()
-    if (!domNode) {
-      console.log('[MonacoEditor] No DOM node')
-      return
-    }
+    if (domNode) {
+      console.log('[MonacoEditor] Adding paste and drop listeners to editor')
 
-    console.log('[MonacoEditor] DOM node found, adding listeners')
+      // 粘贴处理
+      const handlePaste = async (e: Event) => {
+        const clipboardEvent = e as ClipboardEvent
+        console.log('[MonacoEditor] Paste event triggered')
 
-    // 拖拽处理
-    const handleDrop = async (e: DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      console.log('[MonacoEditor] Drop event triggered')
+        const items = clipboardEvent.clipboardData?.items
+        if (!items) {
+          console.log('[MonacoEditor] No clipboardData.items')
+          return
+        }
 
-      const files = e.dataTransfer?.files
-      if (!files || files.length === 0) {
-        console.log('[MonacoEditor] No files in drop event')
-        return
-      }
+        console.log('[MonacoEditor] ClipboardData items count:', items.length)
 
-      console.log('[MonacoEditor] Dropped files count:', files.length)
-      for (const file of Array.from(files)) {
-        console.log('[MonacoEditor] File type:', file.type, 'name:', file.name)
-        if (file.type.startsWith('image/')) {
-          console.log('[MonacoEditor] Image file detected, starting upload...')
-          await handleImageUpload(file)
-          console.log('[MonacoEditor] Image upload completed')
+        // 检查是否有图片
+        let hasImage = false
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i]
+          console.log('[MonacoEditor] Item', i, '- kind:', item.kind, 'type:', item.type)
+
+          if (item.kind === 'file' && item.type.startsWith('image/')) {
+            hasImage = true
+            e.preventDefault()
+            e.stopPropagation()
+
+            console.log('[MonacoEditor] Image detected, type:', item.type)
+            const file = item.getAsFile()
+            if (file) {
+              console.log('[MonacoEditor] Image file size:', file.size, 'bytes')
+              console.log('[MonacoEditor] Starting image upload...')
+              await handleImageUpload(file)
+              console.log('[MonacoEditor] Image upload completed')
+              return
+            }
+          }
+        }
+
+        if (!hasImage) {
+          console.log('[MonacoEditor] No image found, allowing default paste')
         }
       }
-    }
 
-    const handleDragOver = (e: DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-    }
+      // 拖拽处理
+      const handleDrop = async (e: DragEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        console.log('[MonacoEditor] Drop event triggered')
 
-    // 粘贴处理 - 使用原生事件
-    const handlePaste = async (e: Event) => {
-      const clipboardEvent = e as ClipboardEvent
-      console.log('[MonacoEditor] Paste event triggered')
+        const files = e.dataTransfer?.files
+        if (!files || files.length === 0) {
+          console.log('[MonacoEditor] No files in drop event')
+          return
+        }
 
-      const items = clipboardEvent.clipboardData?.items
-      if (!items) {
-        console.log('[MonacoEditor] No clipboardData.items')
-        return
-      }
-
-      console.log('[MonacoEditor] ClipboardData items count:', items.length)
-
-      // 检查是否有图片
-      let hasImage = false
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i]
-        console.log('[MonacoEditor] Item', i, '- kind:', item.kind, 'type:', item.type)
-
-        if (item.kind === 'file' && item.type.startsWith('image/')) {
-          hasImage = true
-          e.preventDefault()
-          e.stopPropagation()
-
-          console.log('[MonacoEditor] Image detected, type:', item.type)
-          const file = item.getAsFile()
-          if (file) {
-            console.log('[MonacoEditor] Image file size:', file.size, 'bytes')
-            console.log('[MonacoEditor] Starting image upload...')
+        console.log('[MonacoEditor] Dropped files count:', files.length)
+        for (const file of Array.from(files)) {
+          console.log('[MonacoEditor] File type:', file.type, 'name:', file.name)
+          if (file.type.startsWith('image/')) {
+            console.log('[MonacoEditor] Image file detected, starting upload...')
             await handleImageUpload(file)
             console.log('[MonacoEditor] Image upload completed')
-            return
           }
         }
       }
 
-      if (!hasImage) {
-        console.log('[MonacoEditor] No image found, allowing default paste')
+      const handleDragOver = (e: DragEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
       }
+
+      domNode.addEventListener('paste', handlePaste, true)
+      domNode.addEventListener('drop', handleDrop)
+      domNode.addEventListener('dragover', handleDragOver)
+
+      console.log('[MonacoEditor] Event listeners added successfully')
     }
 
-    // 监听事件
-    domNode.addEventListener('drop', handleDrop)
-    domNode.addEventListener('dragover', handleDragOver)
-    domNode.addEventListener('paste', handlePaste, true) // 使用捕获阶段
-
-    console.log('[MonacoEditor] Event listeners added successfully')
-
-    return () => {
-      console.log('[MonacoEditor] Removing event listeners')
-      domNode.removeEventListener('drop', handleDrop)
-      domNode.removeEventListener('dragover', handleDragOver)
-      domNode.removeEventListener('paste', handlePaste, true)
+    // 调用外部 onMount 回调
+    if (onMount) {
+      onMount(editor, monaco)
     }
-  }, [handleImageUpload])
+  }, [handleImageUpload, onMount])
+
+  const handleChange = (value: string | undefined) => {
+    onChange(value ?? '')
+  }
 
   return (
     <Editor

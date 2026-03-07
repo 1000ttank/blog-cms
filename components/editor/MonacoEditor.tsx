@@ -115,7 +115,7 @@ export function MonacoEditor({
     editor.focus()
   }
 
-  const handleEditorDidMount: OnMount = (editor, monaco) => {
+  const handleEditorDidMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor
     monacoRef.current = monaco
 
@@ -158,17 +158,47 @@ export function MonacoEditor({
       insertWrapper('[', '](url)')
     })
 
+    // 覆盖粘贴命令来处理图片
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, async () => {
+      try {
+        // 尝试从剪贴板读取
+        const clipboardItems = await navigator.clipboard.read()
+        let hasImage = false
+
+        for (const item of clipboardItems) {
+          for (const type of item.types) {
+            if (type.startsWith('image/')) {
+              hasImage = true
+              const blob = await item.getType(type)
+              const file = new File([blob], `pasted-image-${Date.now()}.png`, { type })
+              await handleImageUpload(file)
+              return
+            }
+          }
+        }
+
+        // 如果没有图片，执行默认粘贴
+        if (!hasImage) {
+          document.execCommand('paste')
+        }
+      } catch (error) {
+        // 如果剪贴板 API 失败，执行默认粘贴
+        console.log('Clipboard API not available, using default paste')
+        document.execCommand('paste')
+      }
+    })
+
     // 调用外部 onMount 回调
     if (onMount) {
       onMount(editor, monaco)
     }
-  }
+  }, [handleImageUpload, onMount])
 
   const handleChange = (value: string | undefined) => {
     onChange(value ?? '')
   }
 
-  // 设置拖拽和粘贴事件
+  // 设置拖拽事件
   useEffect(() => {
     const editor = editorRef.current
     if (!editor) return
@@ -195,66 +225,12 @@ export function MonacoEditor({
       e.stopPropagation()
     }
 
-    const handlePasteEvent = async (e: Event) => {
-      const clipboardEvent = e as ClipboardEvent
-      const items = clipboardEvent.clipboardData?.items
-      if (!items) return
-
-      let hasImage = false
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i]
-        if (item.type.startsWith('image/')) {
-          hasImage = true
-          e.preventDefault()
-          e.stopPropagation()
-          const file = item.getAsFile()
-          if (file) {
-            await handleImageUpload(file)
-            return
-          }
-        }
-      }
-
-      // 如果没有图片，让编辑器正常处理粘贴
-      if (!hasImage) {
-        return
-      }
-    }
-
-    // 监听整个编辑器容器的事件
     domNode.addEventListener('drop', handleDrop)
     domNode.addEventListener('dragover', handleDragOver)
-    domNode.addEventListener('paste', handlePasteEvent, true) // 使用捕获阶段
-
-    // 同时监听 window 的粘贴事件（当编辑器获得焦点时）
-    const handleWindowPaste = async (e: ClipboardEvent) => {
-      // 检查编辑器是否有焦点
-      if (!editor.hasTextFocus()) return
-
-      const items = e.clipboardData?.items
-      if (!items) return
-
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i]
-        if (item.type.startsWith('image/')) {
-          e.preventDefault()
-          e.stopPropagation()
-          const file = item.getAsFile()
-          if (file) {
-            await handleImageUpload(file)
-            return
-          }
-        }
-      }
-    }
-
-    window.addEventListener('paste', handleWindowPaste)
 
     return () => {
       domNode.removeEventListener('drop', handleDrop)
       domNode.removeEventListener('dragover', handleDragOver)
-      domNode.removeEventListener('paste', handlePasteEvent, true)
-      window.removeEventListener('paste', handleWindowPaste)
     }
   }, [handleImageUpload])
 

@@ -27,6 +27,11 @@ export const CDN_ROUTE_INFO = {
     description: '全球 CDN，备用方案',
     template: 'https://cdn.statically.io/gh/{owner}/{repo}/{branch}/{path}',
   },
+  'github-raw': {
+    name: 'GitHub Raw',
+    description: '直接从 GitHub 获取，速度较慢',
+    template: 'https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}',
+  },
   cloudflare: {
     name: 'Cloudflare 自定义域名',
     description: '使用你的域名 + Cloudflare CDN，国内访问友好',
@@ -40,24 +45,39 @@ export const CDN_ROUTE_INFO = {
 }
 
 /**
+ * 从博客仓库读取 CDN 配置
+ */
+export async function loadCDNConfigFromRepo(
+  owner: string,
+  repo: string
+): Promise<DefaultRouteConfig | null> {
+  try {
+    const response = await fetch(
+      `https://raw.githubusercontent.com/${owner}/${repo}/main/source/_data/cdn-config.json`
+    )
+    if (response.ok) {
+      return await response.json()
+    }
+  } catch (error) {
+    console.log('No custom CDN config found, using defaults')
+  }
+  return null
+}
+
+/**
  * 获取默认线路的 URL
  */
 export function getDefaultRouteUrl(
   owner: string,
   repo: string,
   branch: string,
-  path: string
+  path: string,
+  customConfig?: DefaultRouteConfig
 ): string {
-  const { primary } = DEFAULT_ROUTE_CONFIG
+  const config = customConfig || DEFAULT_ROUTE_CONFIG
+  const { primary } = config
 
-  switch (primary) {
-    case 'jsdelivr':
-      return `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${path}`
-    case 'statically':
-      return `https://cdn.statically.io/gh/${owner}/${repo}/${branch}/${path}`
-    default:
-      return `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${path}`
-  }
+  return generateRouteUrl(primary, owner, repo, branch, path)
 }
 
 /**
@@ -67,22 +87,36 @@ export function getFallbackRouteUrls(
   owner: string,
   repo: string,
   branch: string,
-  path: string
+  path: string,
+  customConfig?: DefaultRouteConfig
 ): string[] {
-  const { fallback } = DEFAULT_ROUTE_CONFIG
+  const config = customConfig || DEFAULT_ROUTE_CONFIG
+  const { fallback } = config
 
   return fallback
-    .map((route) => {
-      switch (route) {
-        case 'jsdelivr':
-          return `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${path}`
-        case 'statically':
-          return `https://cdn.statically.io/gh/${owner}/${repo}/${branch}/${path}`
-        case 'github-raw':
-          return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`
-        default:
-          return ''
-      }
-    })
+    .map((route) => generateRouteUrl(route as CDNRoute, owner, repo, branch, path))
     .filter(Boolean)
 }
+
+/**
+ * 生成指定线路的 URL
+ */
+function generateRouteUrl(
+  route: CDNRoute,
+  owner: string,
+  repo: string,
+  branch: string,
+  path: string
+): string {
+  switch (route) {
+    case 'jsdelivr':
+      return `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${path}`
+    case 'statically':
+      return `https://cdn.statically.io/gh/${owner}/${repo}/${branch}/${path}`
+    case 'github-raw':
+      return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`
+    default:
+      return ''
+  }
+}
+

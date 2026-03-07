@@ -160,15 +160,20 @@ export function MonacoEditor({
       insertWrapper('[', '](url)')
     })
 
-    // 在编辑器挂载后立即添加粘贴和拖拽事件监听
+    // 使用 Monaco 的 onDidPaste 事件
+    editor.onDidPaste((e) => {
+      console.log('[MonacoEditor] Monaco onDidPaste event triggered', e)
+    })
+
+    // 同时在 DOM 层面监听粘贴事件（在 Monaco 处理之前）
     const domNode = editor.getDomNode()
     if (domNode) {
-      console.log('[MonacoEditor] Adding paste and drop listeners to editor')
+      console.log('[MonacoEditor] Adding paste listener to DOM')
 
-      // 粘贴处理
-      const handlePaste = async (e: Event) => {
+      // 使用捕获阶段在 Monaco 之前拦截
+      const handlePasteCapture = async (e: Event) => {
         const clipboardEvent = e as ClipboardEvent
-        console.log('[MonacoEditor] Paste event triggered')
+        console.log('[MonacoEditor] DOM paste event (capture phase)')
 
         const items = clipboardEvent.clipboardData?.items
         if (!items) {
@@ -179,15 +184,15 @@ export function MonacoEditor({
         console.log('[MonacoEditor] ClipboardData items count:', items.length)
 
         // 检查是否有图片
-        let hasImage = false
         for (let i = 0; i < items.length; i++) {
           const item = items[i]
           console.log('[MonacoEditor] Item', i, '- kind:', item.kind, 'type:', item.type)
 
           if (item.kind === 'file' && item.type.startsWith('image/')) {
-            hasImage = true
+            // 阻止默认行为和事件传播
             e.preventDefault()
             e.stopPropagation()
+            e.stopImmediatePropagation()
 
             console.log('[MonacoEditor] Image detected, type:', item.type)
             const file = item.getAsFile()
@@ -201,9 +206,7 @@ export function MonacoEditor({
           }
         }
 
-        if (!hasImage) {
-          console.log('[MonacoEditor] No image found, allowing default paste')
-        }
+        console.log('[MonacoEditor] No image found, allowing Monaco to handle paste')
       }
 
       // 拖拽处理
@@ -234,7 +237,8 @@ export function MonacoEditor({
         e.stopPropagation()
       }
 
-      domNode.addEventListener('paste', handlePaste, true)
+      // 使用捕获阶段，确保在 Monaco 之前处理
+      domNode.addEventListener('paste', handlePasteCapture, true)
       domNode.addEventListener('drop', handleDrop)
       domNode.addEventListener('dragover', handleDragOver)
 

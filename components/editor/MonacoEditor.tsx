@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useCallback } from 'react'
 import Editor, { OnMount, Monaco } from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
 import { toast } from 'sonner'

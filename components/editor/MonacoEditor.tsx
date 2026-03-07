@@ -160,77 +160,46 @@ export function MonacoEditor({
       insertWrapper('[', '](url)')
     })
 
-    // 覆盖粘贴命令，在 Monaco 处理之前检查图片
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, async () => {
-      console.log('[MonacoEditor] Paste command intercepted')
-
-      try {
-        // 使用 Clipboard API 读取剪贴板
-        const clipboardItems = await navigator.clipboard.read()
-        console.log('[MonacoEditor] Clipboard items:', clipboardItems.length)
-
-        for (const clipboardItem of clipboardItems) {
-          console.log('[MonacoEditor] Clipboard item types:', clipboardItem.types)
-
-          // 检查是否包含图片
-          const imageType = clipboardItem.types.find(type => type.startsWith('image/'))
-          if (imageType) {
-            console.log('[MonacoEditor] Image type found:', imageType)
-            const blob = await clipboardItem.getType(imageType)
-            const file = new File([blob], `pasted-image-${Date.now()}.${imageType.split('/')[1]}`, {
-              type: imageType,
-            })
-
-            console.log('[MonacoEditor] Image file created, size:', file.size, 'bytes')
-            await handleImageUpload(file)
-            console.log('[MonacoEditor] Image upload completed')
-            return // 阻止默认粘贴行为
-          }
-        }
-
-        console.log('[MonacoEditor] No image found, pasting text manually')
-        // 没有图片，手动粘贴文本
-        const text = await navigator.clipboard.readText()
-        if (text) {
-          const selection = editor.getSelection()
-          if (selection) {
-            editor.executeEdits('paste', [
-              {
-                range: selection,
-                text: text,
-              },
-            ])
-            // 移动光标到粘贴内容的末尾
-            const lines = text.split('\n')
-            const lastLine = lines[lines.length - 1]
-            const newPosition = {
-              lineNumber: selection.startLineNumber + lines.length - 1,
-              column: lines.length === 1 ? selection.startColumn + text.length : lastLine.length + 1,
-            }
-            editor.setPosition(newPosition)
-          }
-        }
-      } catch (error) {
-        console.error('[MonacoEditor] Clipboard read error:', error)
-        // 出错时尝试读取文本
-        try {
-          const text = await navigator.clipboard.readText()
-          if (text) {
-            const selection = editor.getSelection()
-            if (selection) {
-              editor.executeEdits('paste', [{ range: selection, text: text }])
-            }
-          }
-        } catch (e) {
-          console.error('[MonacoEditor] Failed to read clipboard text:', e)
-        }
-      }
-    })
-
-    // 拖拽处理
+    // 拖拽和粘贴处理
     const domNode = editor.getDomNode()
     if (domNode) {
-      console.log('[MonacoEditor] Adding drag&drop listeners to DOM')
+      console.log('[MonacoEditor] Adding paste and drag&drop listeners')
+
+      // 粘贴事件处理（必须在捕获阶段拦截）
+      const handlePaste = async (e: ClipboardEvent) => {
+        console.log('[MonacoEditor] Paste event captured')
+
+        const items = e.clipboardData?.items
+        if (!items) {
+          console.log('[MonacoEditor] No clipboardData.items')
+          return
+        }
+
+        console.log('[MonacoEditor] ClipboardData items count:', items.length)
+
+        // 检查是否有图片
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i]
+          console.log('[MonacoEditor] Item', i, '- kind:', item.kind, 'type:', item.type)
+
+          if (item.kind === 'file' && item.type.startsWith('image/')) {
+            // 阻止默认粘贴行为
+            e.preventDefault()
+            e.stopPropagation()
+
+            console.log('[MonacoEditor] Image detected, type:', item.type)
+            const file = item.getAsFile()
+            if (file) {
+              console.log('[MonacoEditor] Image file size:', file.size, 'bytes')
+              await handleImageUpload(file)
+              console.log('[MonacoEditor] Image upload completed')
+              return
+            }
+          }
+        }
+
+        console.log('[MonacoEditor] No image found, allowing default paste')
+      }
 
       // 拖拽处理
       const handleDrop = async (e: DragEvent) => {
@@ -260,10 +229,12 @@ export function MonacoEditor({
         e.stopPropagation()
       }
 
+      // 使用捕获阶段监听粘贴事件
+      domNode.addEventListener('paste', handlePaste, true)
       domNode.addEventListener('drop', handleDrop)
       domNode.addEventListener('dragover', handleDragOver)
 
-      console.log('[MonacoEditor] Drag&drop listeners added successfully')
+      console.log('[MonacoEditor] Paste and drag&drop listeners added successfully')
     }
 
     // 调用外部 onMount 回调

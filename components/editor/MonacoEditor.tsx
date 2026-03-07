@@ -181,9 +181,8 @@ export function MonacoEditor({
         if (!hasImage) {
           document.execCommand('paste')
         }
-      } catch (error) {
+      } catch {
         // 如果剪贴板 API 失败，执行默认粘贴
-        console.log('Clipboard API not available, using default paste')
         document.execCommand('paste')
       }
     })

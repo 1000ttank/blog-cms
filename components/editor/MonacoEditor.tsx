@@ -188,13 +188,42 @@ export function MonacoEditor({
           }
         }
 
-        console.log('[MonacoEditor] No image found, executing default paste')
-        // 没有图片，执行默认粘贴
-        editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null)
+        console.log('[MonacoEditor] No image found, pasting text manually')
+        // 没有图片，手动粘贴文本
+        const text = await navigator.clipboard.readText()
+        if (text) {
+          const selection = editor.getSelection()
+          if (selection) {
+            editor.executeEdits('paste', [
+              {
+                range: selection,
+                text: text,
+              },
+            ])
+            // 移动光标到粘贴内容的末尾
+            const lines = text.split('\n')
+            const lastLine = lines[lines.length - 1]
+            const newPosition = {
+              lineNumber: selection.startLineNumber + lines.length - 1,
+              column: lines.length === 1 ? selection.startColumn + text.length : lastLine.length + 1,
+            }
+            editor.setPosition(newPosition)
+          }
+        }
       } catch (error) {
         console.error('[MonacoEditor] Clipboard read error:', error)
-        // 出错时执行默认粘贴
-        editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null)
+        // 出错时尝试读取文本
+        try {
+          const text = await navigator.clipboard.readText()
+          if (text) {
+            const selection = editor.getSelection()
+            if (selection) {
+              editor.executeEdits('paste', [{ range: selection, text: text }])
+            }
+          }
+        } catch (e) {
+          console.error('[MonacoEditor] Failed to read clipboard text:', e)
+        }
       }
     })
 

@@ -177,23 +177,38 @@ export function MonacoEditor({
 
         console.log('[MonacoEditor] ClipboardData items count:', items.length)
 
-        // 检查是否有图片
+        // 检查是否有图片或图片文件
         for (let i = 0; i < items.length; i++) {
           const item = items[i]
           console.log('[MonacoEditor] Item', i, '- kind:', item.kind, 'type:', item.type)
 
-          if (item.kind === 'file' && item.type.startsWith('image/')) {
-            // 阻止默认粘贴行为
-            e.preventDefault()
-            e.stopPropagation()
-
-            console.log('[MonacoEditor] Image detected, type:', item.type)
+          // 检测文件类型（包括直接复制的图片和从文件管理器复制的图片文件）
+          if (item.kind === 'file') {
             const file = item.getAsFile()
-            if (file) {
-              console.log('[MonacoEditor] Image file size:', file.size, 'bytes')
+            if (!file) continue
+
+            console.log('[MonacoEditor] File detected - name:', file.name, 'type:', file.type, 'size:', file.size)
+
+            // 检查是否为图片：
+            // 1. MIME type 以 image/ 开头
+            // 2. 或者文件扩展名是图片格式（处理 type 为空的情况）
+            const isImageByType = file.type.startsWith('image/')
+            const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico']
+            const isImageByExtension = imageExtensions.some(ext =>
+              file.name.toLowerCase().endsWith(ext)
+            )
+
+            if (isImageByType || isImageByExtension) {
+              // 阻止默认粘贴行为
+              e.preventDefault()
+              e.stopPropagation()
+
+              console.log('[MonacoEditor] Image file confirmed, starting upload...')
               await handleImageUpload(file)
               console.log('[MonacoEditor] Image upload completed')
               return
+            } else {
+              console.log('[MonacoEditor] File is not an image, skipping')
             }
           }
         }

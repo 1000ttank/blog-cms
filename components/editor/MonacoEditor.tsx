@@ -164,10 +164,13 @@ export function MonacoEditor({
     const domNode = editor.getDomNode()
     if (domNode) {
       console.log('[MonacoEditor] Adding paste and drag&drop listeners')
+      console.log('[MonacoEditor] DOM node:', domNode)
 
       // 粘贴事件处理（必须在捕获阶段拦截）
       const handlePaste = async (e: ClipboardEvent) => {
-        console.log('[MonacoEditor] Paste event captured')
+        console.log('[MonacoEditor] Paste event captured in capture phase')
+        console.log('[MonacoEditor] Event target:', e.target)
+        console.log('[MonacoEditor] Event currentTarget:', e.currentTarget)
 
         const items = e.clipboardData?.items
         if (!items) {
@@ -199,9 +202,10 @@ export function MonacoEditor({
             )
 
             if (isImageByType || isImageByExtension) {
-              // 阻止默认粘贴行为
+              // 阻止所有默认行为和传播
               e.preventDefault()
               e.stopPropagation()
+              e.stopImmediatePropagation()
 
               console.log('[MonacoEditor] Image file confirmed, starting upload...')
               await handleImageUpload(file)
@@ -244,12 +248,24 @@ export function MonacoEditor({
         e.stopPropagation()
       }
 
-      // 使用捕获阶段监听粘贴事件
+      // 在 DOM 节点和 document 两个层级都监听粘贴事件
+      // 使用捕获阶段确保在 Monaco 之前拦截
       domNode.addEventListener('paste', handlePaste, true)
+      document.addEventListener('paste', handlePaste, true)
       domNode.addEventListener('drop', handleDrop)
       domNode.addEventListener('dragover', handleDragOver)
 
       console.log('[MonacoEditor] Paste and drag&drop listeners added successfully')
+      console.log('[MonacoEditor] Listeners attached to:', { domNode, document })
+
+      // 清理函数
+      return () => {
+        domNode.removeEventListener('paste', handlePaste, true)
+        document.removeEventListener('paste', handlePaste, true)
+        domNode.removeEventListener('drop', handleDrop)
+        domNode.removeEventListener('dragover', handleDragOver)
+        console.log('[MonacoEditor] Event listeners removed')
+      }
     }
 
     // 调用外部 onMount 回调

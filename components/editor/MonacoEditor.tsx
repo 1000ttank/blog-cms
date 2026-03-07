@@ -200,6 +200,40 @@ export function MonacoEditor({
       const items = clipboardEvent.clipboardData?.items
       if (!items) return
 
+      let hasImage = false
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        if (item.type.startsWith('image/')) {
+          hasImage = true
+          e.preventDefault()
+          e.stopPropagation()
+          const file = item.getAsFile()
+          if (file) {
+            await handleImageUpload(file)
+            return
+          }
+        }
+      }
+
+      // 如果没有图片，让编辑器正常处理粘贴
+      if (!hasImage) {
+        return
+      }
+    }
+
+    // 监听整个编辑器容器的事件
+    domNode.addEventListener('drop', handleDrop)
+    domNode.addEventListener('dragover', handleDragOver)
+    domNode.addEventListener('paste', handlePasteEvent, true) // 使用捕获阶段
+
+    // 同时监听 window 的粘贴事件（当编辑器获得焦点时）
+    const handleWindowPaste = async (e: ClipboardEvent) => {
+      // 检查编辑器是否有焦点
+      if (!editor.hasTextFocus()) return
+
+      const items = e.clipboardData?.items
+      if (!items) return
+
       for (let i = 0; i < items.length; i++) {
         const item = items[i]
         if (item.type.startsWith('image/')) {
@@ -214,14 +248,13 @@ export function MonacoEditor({
       }
     }
 
-    domNode.addEventListener('drop', handleDrop)
-    domNode.addEventListener('dragover', handleDragOver)
-    domNode.addEventListener('paste', handlePasteEvent)
+    window.addEventListener('paste', handleWindowPaste)
 
     return () => {
       domNode.removeEventListener('drop', handleDrop)
       domNode.removeEventListener('dragover', handleDragOver)
-      domNode.removeEventListener('paste', handlePasteEvent)
+      domNode.removeEventListener('paste', handlePasteEvent, true)
+      window.removeEventListener('paste', handleWindowPaste)
     }
   }, [handleImageUpload])
 

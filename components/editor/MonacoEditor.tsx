@@ -160,18 +160,25 @@ export function MonacoEditor({
 
     // 覆盖粘贴命令来处理图片
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, async () => {
+      console.log('[MonacoEditor] Paste command triggered')
       try {
         // 尝试从剪贴板读取
         const clipboardItems = await navigator.clipboard.read()
+        console.log('[MonacoEditor] Clipboard items:', clipboardItems)
         let hasImage = false
 
         for (const item of clipboardItems) {
+          console.log('[MonacoEditor] Clipboard item types:', item.types)
           for (const type of item.types) {
             if (type.startsWith('image/')) {
               hasImage = true
+              console.log('[MonacoEditor] Image detected, type:', type)
               const blob = await item.getType(type)
+              console.log('[MonacoEditor] Image blob size:', blob.size, 'bytes')
               const file = new File([blob], `pasted-image-${Date.now()}.png`, { type })
+              console.log('[MonacoEditor] Starting image upload...')
               await handleImageUpload(file)
+              console.log('[MonacoEditor] Image upload completed')
               return
             }
           }
@@ -179,10 +186,12 @@ export function MonacoEditor({
 
         // 如果没有图片，执行默认粘贴
         if (!hasImage) {
+          console.log('[MonacoEditor] No image found, executing default paste')
           document.execCommand('paste')
         }
-      } catch {
+      } catch (error) {
         // 如果剪贴板 API 失败，执行默认粘贴
+        console.error('[MonacoEditor] Clipboard API error:', error)
         document.execCommand('paste')
       }
     })
@@ -208,13 +217,21 @@ export function MonacoEditor({
     const handleDrop = async (e: DragEvent) => {
       e.preventDefault()
       e.stopPropagation()
+      console.log('[MonacoEditor] Drop event triggered')
 
       const files = e.dataTransfer?.files
-      if (!files || files.length === 0) return
+      if (!files || files.length === 0) {
+        console.log('[MonacoEditor] No files in drop event')
+        return
+      }
 
+      console.log('[MonacoEditor] Dropped files count:', files.length)
       for (const file of Array.from(files)) {
+        console.log('[MonacoEditor] File type:', file.type, 'name:', file.name)
         if (file.type.startsWith('image/')) {
+          console.log('[MonacoEditor] Image file detected, starting upload...')
           await handleImageUpload(file)
+          console.log('[MonacoEditor] Image upload completed')
         }
       }
     }

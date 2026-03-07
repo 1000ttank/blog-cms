@@ -1,69 +1,77 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Info, Save, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/authStore'
-import { githubClient } from '@/services/githubClient'
+import { GitHubClient } from '@/services/githubClient'
 import { DEFAULT_ROUTE_CONFIG, CDN_ROUTE_INFO, type DefaultRouteConfig } from '@/config/defaultCDNRoutes'
 import type { CDNRoute } from '@/types/imageHosting'
 
 export default function CDNConfigPage() {
-  const { config: authConfig } = useAuthStore()
-  const [primary, setPrimary] = useState<CDNRoute>('jsdelivr')
+  const { config: authConfig, token } = useAuthStore()
+  const [primary, setPrimary] = useState<CDNRoute | 'custom'>('jsdelivr')
+  const [customDomain, setCustomDomain] = useState('')
   const [fallback, setFallback] = useState<string[]>(['statically', 'github-raw'])
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    loadConfig()
-  }, [authConfig])
-
-  async function loadConfig() {
-    if (!authConfig) return
+  const loadConfig = useCallback(async () => {
+    if (!authConfig || !token) return
 
     setIsLoading(true)
     try {
-      const content = await githubClient.getFileContent(
-        authConfig.owner,
-        authConfig.repo,
-        'source/_data/cdn-config.json'
-      )
+      const client = new GitHubClient({ ...authConfig, token })
+      const { content } = await client.getFile('source/_data/cdn-config.json')
       const config: DefaultRouteConfig = JSON.parse(content)
       setPrimary(config.primary)
+      setCustomDomain(config.custom_domain || '')
       setFallback(config.fallback)
       toast.success('已加载自定义 CDN 配置')
-    } catch (error) {
+    } catch {
       // 文件不存在，使用默认配置
       setPrimary(DEFAULT_ROUTE_CONFIG.primary)
       setFallback(DEFAULT_ROUTE_CONFIG.fallback)
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [authConfig, token])
+
+  useEffect(() => {
+    loadConfig()
+  }, [loadConfig])
 
   async function handleSave() {
-    if (!authConfig) return
+    if (!authConfig || !token) return
+
+    // 验证自定义域名
+    if (primary === 'custom' && !customDomain) {
+      toast.error('请输入自定义 CDN 域名')
+      return
+    }
 
     setIsSaving(true)
     try {
       const config: DefaultRouteConfig = {
         primary,
+        custom_domain: customDomain || undefined,
         fallback,
-        description: `默认使用 ${CDN_ROUTE_INFO[primary].name}，失败时自动切换到备用线路`,
+        description: primary === 'custom'
+          ? `使用自定义域名 ${customDomain} 智能路由`
+          : `默认使用 ${CDN_ROUTE_INFO[primary].name}，失败时自动切换到备用线路`,
       }
 
       const content = JSON.stringify(config, null, 2)
+      const client = new GitHubClient({ ...authConfig, token })
 
-      await githubClient.createOrUpdateFile(
-        authConfig.owner,
-        authConfig.repo,
+      await client.createFile(
         'source/_data/cdn-config.json',
         content,
         'Update CDN configuration'
@@ -128,7 +136,7 @@ export default function CDNConfigPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>主线路</Label>
-              <Select value={primary} onValueChange={(v) => setPrimary(v as CDNRoute)}>
+              <Select value={primary} onValueChange={(v) => setPrimary(v as CDNRoute | 'custom')}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -147,6 +155,20 @@ export default function CDNConfigPage() {
                 {CDN_ROUTE_INFO[primary]?.description}
               </p>
             </div>
+
+            {primary === 'custom' && (
+              <div className="space-y-2">
+                <Label>自定义 CDN 域名</Label>
+                <Input
+                  placeholder="cdn.yourdomain.com"
+                  value={customDomain}
+                  onChange={(e) => setCustomDomain(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  输入你的 Cloudflare Workers 域名，例如：cdn.example.com
+                </p>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>备用线路</Label>

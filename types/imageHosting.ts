@@ -2,7 +2,7 @@
  * 图床配置类型定义
  */
 
-export type CDNRoute = 'jsdelivr' | 'statically' | 'cloudflare' | 'default'
+export type CDNRoute = 'jsdelivr' | 'statically' | 'github-raw' | 'cloudflare' | 'custom' | 'default'
 
 export interface CloudflareConfig {
   domain: string

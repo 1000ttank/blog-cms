@@ -5,7 +5,8 @@
 import type { CDNRoute } from '@/types/imageHosting'
 
 export interface DefaultRouteConfig {
-  primary: CDNRoute
+  primary: CDNRoute | 'custom'
+  custom_domain?: string  // 自定义 CDN 域名
   fallback: string[]
   description: string
 }
@@ -31,6 +32,11 @@ export const CDN_ROUTE_INFO = {
     name: 'GitHub Raw',
     description: '直接从 GitHub 获取，速度较慢',
     template: 'https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}',
+  },
+  custom: {
+    name: '自定义 CDN 域名',
+    description: '使用 Cloudflare Workers 智能路由到 jsDelivr/Statically',
+    template: 'https://{custom_domain}/gh/{owner}/{repo}@{branch}/{path}',
   },
   cloudflare: {
     name: 'Cloudflare 自定义域名',
@@ -75,9 +81,9 @@ export function getDefaultRouteUrl(
   customConfig?: DefaultRouteConfig
 ): string {
   const config = customConfig || DEFAULT_ROUTE_CONFIG
-  const { primary } = config
+  const { primary, custom_domain } = config
 
-  return generateRouteUrl(primary, owner, repo, branch, path)
+  return generateRouteUrl(primary, owner, repo, branch, path, custom_domain)
 }
 
 /**
@@ -91,10 +97,10 @@ export function getFallbackRouteUrls(
   customConfig?: DefaultRouteConfig
 ): string[] {
   const config = customConfig || DEFAULT_ROUTE_CONFIG
-  const { fallback } = config
+  const { fallback, custom_domain } = config
 
   return fallback
-    .map((route) => generateRouteUrl(route as CDNRoute, owner, repo, branch, path))
+    .map((route) => generateRouteUrl(route as CDNRoute | 'custom', owner, repo, branch, path, custom_domain))
     .filter(Boolean)
 }
 
@@ -102,11 +108,12 @@ export function getFallbackRouteUrls(
  * 生成指定线路的 URL
  */
 function generateRouteUrl(
-  route: CDNRoute,
+  route: CDNRoute | 'custom',
   owner: string,
   repo: string,
   branch: string,
-  path: string
+  path: string,
+  customDomain?: string
 ): string {
   switch (route) {
     case 'jsdelivr':
@@ -115,6 +122,11 @@ function generateRouteUrl(
       return `https://cdn.statically.io/gh/${owner}/${repo}/${branch}/${path}`
     case 'github-raw':
       return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`
+    case 'custom':
+      if (!customDomain) return ''
+      // 移除协议前缀
+      const domain = customDomain.replace(/^https?:\/\//, '')
+      return `https://${domain}/gh/${owner}/${repo}@${branch}/${path}`
     default:
       return ''
   }

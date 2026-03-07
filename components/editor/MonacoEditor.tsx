@@ -160,46 +160,42 @@ export function MonacoEditor({
       insertWrapper('[', '](url)')
     })
 
-    // 使用 Monaco 的 onDidPaste 事件处理图片粘贴
-    editor.onDidPaste(async (e) => {
-      console.log('[MonacoEditor] Monaco onDidPaste event triggered', e)
+    // 覆盖粘贴命令，在 Monaco 处理之前检查图片
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, async () => {
+      console.log('[MonacoEditor] Paste command intercepted')
 
-      const clipboardEvent = e.clipboardEvent
-      const items = clipboardEvent?.clipboardData?.items
+      try {
+        // 使用 Clipboard API 读取剪贴板
+        const clipboardItems = await navigator.clipboard.read()
+        console.log('[MonacoEditor] Clipboard items:', clipboardItems.length)
 
-      if (!items) {
-        console.log('[MonacoEditor] No clipboardData.items')
-        return
-      }
+        for (const clipboardItem of clipboardItems) {
+          console.log('[MonacoEditor] Clipboard item types:', clipboardItem.types)
 
-      console.log('[MonacoEditor] ClipboardData items count:', items.length)
+          // 检查是否包含图片
+          const imageType = clipboardItem.types.find(type => type.startsWith('image/'))
+          if (imageType) {
+            console.log('[MonacoEditor] Image type found:', imageType)
+            const blob = await clipboardItem.getType(imageType)
+            const file = new File([blob], `pasted-image-${Date.now()}.${imageType.split('/')[1]}`, {
+              type: imageType,
+            })
 
-      // 检查是否有图片
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i]
-        console.log('[MonacoEditor] Item', i, '- kind:', item.kind, 'type:', item.type)
-
-        if (item.kind === 'file' && item.type.startsWith('image/')) {
-          console.log('[MonacoEditor] Image detected, type:', item.type)
-          const file = item.getAsFile()
-          if (file) {
-            console.log('[MonacoEditor] Image file size:', file.size, 'bytes')
-            console.log('[MonacoEditor] Starting image upload...')
-
-            // 撤销 Monaco 刚刚插入的内容
-            const model = editor.getModel()
-            if (model) {
-              editor.trigger('keyboard', 'undo', null)
-            }
-
+            console.log('[MonacoEditor] Image file created, size:', file.size, 'bytes')
             await handleImageUpload(file)
             console.log('[MonacoEditor] Image upload completed')
-            return
+            return // 阻止默认粘贴行为
           }
         }
-      }
 
-      console.log('[MonacoEditor] No image found, allowing Monaco to handle paste')
+        console.log('[MonacoEditor] No image found, executing default paste')
+        // 没有图片，执行默认粘贴
+        editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null)
+      } catch (error) {
+        console.error('[MonacoEditor] Clipboard read error:', error)
+        // 出错时执行默认粘贴
+        editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null)
+      }
     })
 
     // 拖拽处理

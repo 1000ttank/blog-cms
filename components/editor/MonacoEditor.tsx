@@ -119,6 +119,8 @@ export function MonacoEditor({
     editorRef.current = editor
     monacoRef.current = monaco
 
+    console.log('[MonacoEditor] Editor mounted')
+
     // 配置编辑器选项
     editor.updateOptions({
       fontSize: 14,
@@ -162,7 +164,7 @@ export function MonacoEditor({
     if (onMount) {
       onMount(editor, monaco)
     }
-  }, [handleImageUpload, onMount])
+  }, [onMount])
 
   const handleChange = (value: string | undefined) => {
     onChange(value ?? '')
@@ -170,11 +172,20 @@ export function MonacoEditor({
 
   // 设置拖拽和粘贴事件
   useEffect(() => {
+    console.log('[MonacoEditor] Setting up event listeners')
     const editor = editorRef.current
-    if (!editor) return
+    if (!editor) {
+      console.log('[MonacoEditor] No editor ref')
+      return
+    }
 
     const domNode = editor.getDomNode()
-    if (!domNode) return
+    if (!domNode) {
+      console.log('[MonacoEditor] No DOM node')
+      return
+    }
+
+    console.log('[MonacoEditor] DOM node found, adding listeners')
 
     // 拖拽处理
     const handleDrop = async (e: DragEvent) => {
@@ -250,7 +261,10 @@ export function MonacoEditor({
     domNode.addEventListener('dragover', handleDragOver)
     domNode.addEventListener('paste', handlePaste, true) // 使用捕获阶段
 
+    console.log('[MonacoEditor] Event listeners added successfully')
+
     return () => {
+      console.log('[MonacoEditor] Removing event listeners')
       domNode.removeEventListener('drop', handleDrop)
       domNode.removeEventListener('dragover', handleDragOver)
       domNode.removeEventListener('paste', handlePaste, true)

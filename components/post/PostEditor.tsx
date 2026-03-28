@@ -73,7 +73,7 @@ export function PostEditor({ mode, post }: PostEditorProps) {
     description: post?.frontmatter.description as string | undefined,
     cover: post?.frontmatter.cover as string | undefined,
     slug: post?.frontmatter.slug as string | undefined,
-    katex: post?.frontmatter.katex as boolean | undefined,
+    math: post?.frontmatter.math as boolean | undefined,
   })
 
   const [body, setBody] = useState<string>(post?.body ?? DEFAULT_BODY)
@@ -92,7 +92,7 @@ export function PostEditor({ mode, post }: PostEditorProps) {
         description: post.frontmatter.description as string | undefined,
         cover: post.frontmatter.cover as string | undefined,
         slug: post.frontmatter.slug as string | undefined,
-        katex: post.frontmatter.katex as boolean | undefined,
+        math: post.frontmatter.math as boolean | undefined,
       })
       setBody(post.body ?? DEFAULT_BODY)
     }
@@ -268,7 +268,7 @@ export function PostEditor({ mode, post }: PostEditorProps) {
                 source={body}
                 style={{ background: 'transparent' }}
                 wrapperElement={{ 'data-color-mode': resolvedTheme } as React.HTMLAttributes<HTMLDivElement>}
-                {...(frontmatter.katex !== false
+                {...(frontmatter.math !== false
                   ? {
                       rehypePlugins: [[rehypeKatex, { strict: false }]],
                       remarkPlugins: [remarkMath],

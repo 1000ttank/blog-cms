@@ -82,7 +82,7 @@ export interface PostInput {
   description?: string
   cover?: string
   slug?: string
-  katex?: boolean
+  math?: boolean
 }
 
 export interface PostListItem {

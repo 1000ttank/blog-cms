@@ -183,18 +183,18 @@ export function FrontmatterForm({ value, onChange }: FrontmatterFormProps) {
         />
       </div>
 
-      {/* Katex */}
+      {/* Math */}
       <div className="flex items-center justify-between pt-3 border-t">
         <div>
-          <Label htmlFor="fm-katex" className="cursor-pointer">
-            启用 Katex
+          <Label htmlFor="fm-math" className="cursor-pointer">
+            启用数学公式
           </Label>
           <p className="text-xs text-muted-foreground">渲染数学公式（$...$ 和 $$...$$）</p>
         </div>
         <Switch
-          id="fm-katex"
-          checked={value.katex ?? true}
-          onCheckedChange={(checked) => update({ katex: checked })}
+          id="fm-math"
+          checked={value.math ?? true}
+          onCheckedChange={(checked) => update({ math: checked })}
         />
       </div>
 

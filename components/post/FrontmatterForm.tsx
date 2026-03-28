@@ -183,6 +183,21 @@ export function FrontmatterForm({ value, onChange }: FrontmatterFormProps) {
         />
       </div>
 
+      {/* Katex */}
+      <div className="flex items-center justify-between pt-3 border-t">
+        <div>
+          <Label htmlFor="fm-katex" className="cursor-pointer">
+            启用 Katex
+          </Label>
+          <p className="text-xs text-muted-foreground">渲染数学公式（$...$ 和 $$...$$）</p>
+        </div>
+        <Switch
+          id="fm-katex"
+          checked={value.katex ?? true}
+          onCheckedChange={(checked) => update({ katex: checked })}
+        />
+      </div>
+
       {/* Cover Image */}
       <div className="space-y-1.5">
         <Label htmlFor="fm-cover">封面图片 URL</Label>

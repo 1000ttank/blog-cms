@@ -64,7 +64,7 @@ export async function loadCDNConfigFromRepo(
     if (response.ok) {
       return await response.json()
     }
-  } catch (error) {
+  } catch {
     console.log('No custom CDN config found, using defaults')
   }
   return null
